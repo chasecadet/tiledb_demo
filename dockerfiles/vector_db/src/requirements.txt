@@ -1,0 +1,6 @@
+kserve==0.11.0
+langchain>=0.0.331
+sentence_transformers==2.2.2
+torch>=1.6.0
+minio
+tiledb-vector-search
