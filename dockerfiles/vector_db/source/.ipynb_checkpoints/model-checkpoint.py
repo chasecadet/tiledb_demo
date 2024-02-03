@@ -1,29 +1,58 @@
-import os
 import argparse
+import kserve
+import os
+import logging
 from minio import Minio
-from langchain.embeddings import HuggingFaceEmbeddings
+import glob
+from tqdm import tqdm
 from langchain.vectorstores.tiledb import TileDB
-from utils import download_docs, process_docs, load_docs  # Import your utility functions here
+from langchain.embeddings import HuggingFaceEmbeddings
+from utils import download_docs
+from utils import process_docs
+from utils import get_client
+from utils import load_docs
 
-# Setup your environment variables and logging as before
+
+
+logger = logging.getLogger(__name__)
+DEFAULT_NUM_DOCS = 2
 EMBED_MODEL_NAME = os.getenv("EMBED_MODEL_NAME", "all-MiniLM-L6-v2")
 ACCESS_KEY = os.getenv("ACCESS_KEY", 'minio')
-SECRET_KEY = os.getenv("SECRET_KEY", 'minio123')
+SECRET_KEY= os.getenv("SECRET_KEY",'minio123')
+CLIENT_URL=os.getenv("CLIENT_URL","minio-service.kubeflow.svc.cluster.local:9000")
+BUCKET_NAME=os.getenv("BUCKET_NAME","newtiledb")
+class VectorStore(kserve.Model):
+    def __init__(self, name: str, bucket_name: str):
+        super().__init__(name)
+        self.name = name
+        self._prepare_vectorstore(bucket_name)
+        self.ready = True
 
-class VectorStore:
-    def __init__(self, name: str, persist_uri: str):
-        # Your initialization logic here
-        pass
-
-    # Include your _prepare_vectorstore and predict methods here
-
-def main(bucket_name, persist_uri):
-    # Your main logic to initialize MinIO, process documents, and prepare the VectorStore
+    def _prepare_vectorstore(self, bucket_name: str):
+        embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL_NAME)
+        try:
+            self.vector_db=TileDB.load("tmp_index",embeddings)
+        except:
+            print("index was not present. Creating a new index")
+            client=get_client(ACCESS_KEY,SECRET_KEY,CLIENT_URL)
+            download_docs(BUCKET_NAME,client)
+            docs = load_docs("tmp_docs")
+            documents = process_docs(docs, chunk_size=500, chunk_overlap=0)
+            self.vector_db = TileDB.from_documents(documents, embeddings, index_uri="tmp_index", index_type="FLAT")
+    
+    def predict(self, request: dict, headers: dict) -> dict:
+        data = request["instances"][0]
+        query = data["input"]
+        num_docs = data.get("num_docs", DEFAULT_NUM_DOCS)
+        logger.info(f"Received question: {query}")
+        docs = self.vector_db.similarity_search(query, k=num_docs)
+        logger.info(f"Retrieved context: {docs}")
+        return {"predictions": [doc.page_content for doc in docs]}
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="VectorStore server")
+    parser = argparse.ArgumentParser(prog="VectorStore", description="VectorStore server")
+    # Remove required=True for positional arguments
     parser.add_argument("bucket_name", type=str, help="MinIO bucket location of the persisted VectorStore.")
-    parser.add_argument("persist_uri", type=str, help="URI for persisting the VectorStore index.")
     args = parser.parse_args()
-
-    main(args.bucket_name, args.persist_uri)
+    model = VectorStore("vectorstore", args.bucket_name)
+    kserve.ModelServer(workers=1).start([model])

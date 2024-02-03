@@ -1,16 +1,11 @@
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from minio import Minio
 import os
-import logging
-import boto3
-import urllib
-import posixpath
-logger = logging.getLogger(__name__)
+import glob
+from tqdm import tqdm
+from langchain.document_loaders import TextLoader
 
-import os
-
-# Initialize the Minio client (assuming it's already done elsewhere in your code)
-# client = Minio("YOUR_MINIO_ENDPOINT", access_key="YOUR_ACCESS_KEY", secret_key="YOUR_SECRET_KEY", secure=True)
-
-def download_docs(bucket_name):
+def download_docs(bucket_name,client):
     # Ensure the documentation directory exists
     target_directory = "tmp_docs"
     if not os.path.exists(target_directory):
@@ -31,9 +26,11 @@ def download_docs(bucket_name):
             print(f"Downloaded {obj.object_name} to {destination_path}")
         else:
             print(f"Skipping non-txt file {obj.object_name}")
+def load_doc(fn):
+    loader = TextLoader(fn)
+    doc = loader.load()
+    return doc
 
-# Example usage
-# download_files('your-bucket-name')
 def load_docs(source_dir: str) -> list:
     """Load all documents in a the given directory."""
     fns = glob.glob(os.path.join(source_dir, "*.txt"))    
@@ -41,13 +38,15 @@ def load_docs(source_dir: str) -> list:
     for i, fn in enumerate(tqdm(fns, desc="Loading documents...")):
         docs.extend(load_doc(fn))
     return docs
+
 def process_docs(docs: list, chunk_size: int, chunk_overlap: int) -> list:
     """Load the documents and split them into chunks."""
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     texts = text_splitter.split_documents(docs)
     return texts
-def return_client(m_access_key,m_secret_key):
-    client = Minio("minio-service.kubeflow.svc.cluster.local:9000",
+
+def get_client(m_access_key,m_secret_key,client_url):
+    client = Minio(client_url,
     access_key=m_access_key,
     secret_key=m_secret_key,
     secure=False,   
