@@ -39,8 +39,8 @@ class Transformer(Model):
         deployment_name = self.vectorstore_name
         model_name = deployment_name
         # Build the vectorstore URL
-        svc = f'{deployment_name}-predictor-default.{namespace}.{domain_name}'
-        url = f"https://{svc}/v1/models/{model_name}:predict"
+        svc = f'{deployment_name}-predictor.{namespace}.{domain_name}'
+        url = f"http://{svc}/v1/models/{model_name}:predict"
         return url
 
     @property
@@ -51,16 +51,11 @@ class Transformer(Model):
         return self._http_client_instance
 
     def preprocess(self, request: dict, headers: dict) -> dict:
-        self.authorization = headers["authorization"]
-
         data = request["instances"][0]
         query = data["input"]
-
         logger.info(f"Received question: {query}")
-
         num_docs = data.get("num_docs", 4)
         context = data.get("context", None)
-
         if context:
             logger.info(f"Received context: {context}")
             logger.info(f"Skipping retrieval step...")
@@ -71,7 +66,7 @@ class Transformer(Model):
                 f"Receiving relevant docs from: {self.vectorstore_url}")
 
             response = requests.post(
-                self.vectorstore_url, json=payload, headers=headers,
+                self.vectorstore_url, json=payload,
                 verify=False)
             response = json.loads(response.text)        
             context = "\n".join(response["predictions"])

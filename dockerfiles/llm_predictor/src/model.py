@@ -46,10 +46,8 @@ class LLM(kserve.Model):
         instruction = data["instruction"]
         context = data["context"]
         query = data["input"]
-
         logger.info(f"Received instruction: {instruction}")
         logger.info(f"Received input: {query}")
-
         # generation parameters
         temperature = data.get("temperature", .2)
         max_tokens = data.get("max_tokens", 200)
