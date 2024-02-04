@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-deployment
+  labels:
+    app: llm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llm
+  template:
+    metadata:
+      labels:
+        app: llm
+    spec:
+      containers:
+      - name: llm-container
+        image: <your-docker-image-name>:<tag>
+        ports:
+        - containerPort: 8080
+        env:
+        - name: GRADIO_SERVER_PORT
+          value: "8080"
+        - name: GRADIO_SERVER_NAME
+          value: "0.0.0.0"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-transformer-default
+spec:
+  selector:
+    app: llm
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+
