@@ -38,6 +38,7 @@ class Transformer(Model):
         namespace = self._get_namespace()
         deployment_name = self.vectorstore_name
         model_name = deployment_name
+
         # Build the vectorstore URL
         svc = f'{deployment_name}-predictor-default.{namespace}.{domain_name}'
         url = f"https://{svc}/v1/models/{model_name}:predict"
@@ -46,8 +47,9 @@ class Transformer(Model):
     @property
     def _http_client(self):
         if self._http_client_instance is None:
-            # No Authorization header needed
-            self._http_client_instance = httpx.AsyncClient(verify=False)  # Removed headers argument
+            headers = {"Authorization": self.authorization}
+            self._http_client_instance = httpx.AsyncClient(headers=headers,
+                                                           verify=False)
         return self._http_client_instance
 
     def preprocess(self, request: dict, headers: dict) -> dict:
@@ -67,16 +69,22 @@ class Transformer(Model):
             return {"instances": [data]}
         else:
             payload = {"instances":[{"input": query, "num_docs": num_docs}]}
+            headers = {"Authorization": self.authorization}
+
             logger.info(
                 f"Receiving relevant docs from: {self.vectorstore_url}")
 
             response = requests.post(
                 self.vectorstore_url, json=payload, headers=headers,
                 verify=False)
-            response = json.loads(response.text)        
+            response = json.loads(response.text)
+            
             context = "\n".join(response["predictions"])
+
             logger.info(f"Received documents: {context}")
+
             return {"instances": [{**data, **{"context": context}}]}
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(parents=[model_server.parser])
