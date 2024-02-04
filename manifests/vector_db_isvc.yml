@@ -1,0 +1,39 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: vectorstore  
+spec:
+  predictor:
+    containers:
+    - name: kserve-container
+      image: "chasechristensen/tiledb-vector-isvc:v2"
+      imagePullPolicy: Always
+      resources:
+        requests:
+          memory: "2Gi"
+          cpu: "500m"
+        limits:
+          memory: "2Gi"
+          cpu: "500m"
+      args:
+      - newtiledb
+      env:
+      # If you are running behind a proxy, uncomment the following lines and replace the values with your proxy URLs.
+      # - name: HTTP_PROXY
+      #   value: <your http proxy URL>
+      # - name: HTTPS_PROXY
+      #   value: <your https proxy URL>
+      # - name: NO_PROXY
+      #   value: .local
+      - name: ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            key: ACCESS_KEY
+            name: minio-secret
+      - name: SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            key: SECRET_KEY
+            name: minio-secret
+      - name: CLIENT_URL
+        value: "minio-service.kubeflow.svc.cluster.local:9000"
