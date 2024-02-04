@@ -1,14 +1,1 @@
-# kubeflow packages
-kfp==2.4.0
-kfp-server-api==2.0.3
-# jupyterlab extensions
-jupyterlab-git==0.44.0
-boto3==1.21.0
-sentence-transformers==2.2.2
-tqdm==4.65.0
-jupyter==1.0.0
-ipywidgets==7.7.5
-tiledb-vector-search>=0.0.18
-langchain>=0.0.331
-openai 
-tiktoken
+minio

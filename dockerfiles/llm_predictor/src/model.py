@@ -22,7 +22,6 @@ Response:
 
 """
 
-
 class LLM(kserve.Model):
     def __init__(self, name: str, model: str, model_path: str):
         super().__init__(name)
