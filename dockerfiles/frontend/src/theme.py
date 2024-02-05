@@ -3,7 +3,7 @@ from gradio.themes import Base
 from gradio.themes.utils import colors
 
 # Define TileDB colors here
-TILEDB_PRIMARY = "#2A7DE1"  # Example primary color
+TILEDB_PRIMARY = "##2a7de1"  # Example primary color
 TILEDB_SECONDARY = "#F3F4F6"  # Example secondary color
 TILEDB_BACKGROUND = "#374151"  # Example background color
 TILEDB_TEXT = "#6E707A"  # Example text color
@@ -16,8 +16,8 @@ class TileDBTheme(Base):
     def __init__(
             self,
             *,
-            primary_hue: Union[colors.Color, str] = TILEDB_PRIMARY,
-            neutral_hue: Union[colors.Color, str] = TILEDB_BACKGROUND,
+            primary_hue: Union[colors.Color, str] = colors.slate,
+            neutral_hue: Union[colors.Color, str] = colors.cyan,
             ):
         super().__init__(
             primary_hue=primary_hue,

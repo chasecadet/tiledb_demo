@@ -4,5 +4,5 @@ ADD src/requirements.txt /workspace/requirements.txt
 RUN pip install -r requirements.txt
 ADD src/app.py src/theme.py images/app-header.png /workspace/
 ENV HOME=/workspace
-EXPOSE 80
+EXPOSE 8080
 CMD [ "python3" , "/workspace/app.py" ]

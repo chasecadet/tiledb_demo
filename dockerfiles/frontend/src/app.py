@@ -1,24 +1,26 @@
 import json
 import requests
-
+from fastapi import FastAPI
 import gradio as gr
 from theme import TileDBTheme
-
-
+import os
+import uvicorn 
+app = FastAPI()
+CUSTOM_PATH = os.environ.get("CUSTOM_PATH", "/tiledb")
 DOMAIN_NAME = "svc.cluster.local"
 NAMESPACE = open("/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r").read()
 DEPLOYMENT_NAME = "llm"
 MODEL_NAME = DEPLOYMENT_NAME
 SVC = f"{DEPLOYMENT_NAME}-transformer.{NAMESPACE}.{DOMAIN_NAME}"
-URL = f"https://{SVC}/v1/models/{MODEL_NAME}:predict"
+URL = f"http://{SVC}/v1/models/{MODEL_NAME}:predict"
 
 SYSTEM_MESSAGE = "You are an AI assistant. You will be given a task. You must generate a detailed answer."
 INSTRUCTION = "Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer."
 
 example_questions = [
-    ["What is TileDB?"],
-    ["What makes TileDB a great vector database?"],
-    ["Does the TileDB vector database use sparse or dense arrays?"]
+    ["How does this demo work?"],
+    ["Why TileDB for vector databases?"],
+    ["Do vector datatbases use dense or sparse arrays?"]
 ]
 
 
@@ -53,8 +55,8 @@ def llm_service(question, system, instruction, temperature, num_docs, max_tokens
     return json.loads(response.text)["predictions"][0]
 
 
-if __name__ == "__main__":
-    with gr.Blocks(theme=TileDBTheme()) as app:
+def create_gradio_app():
+    with gr.Blocks(theme=TileDBTheme()) as demo:
         gr.Markdown("![ai-enabled-search](file/app-header.png)")
         with gr.Row():
             question = gr.Textbox(label="Question", autofocus=True)
@@ -130,5 +132,15 @@ if __name__ == "__main__":
             outputs=[question, system, instruction, temperature, num_docs,
                      max_tokens, top_k, top_p, context_check, output])
 
-    app.launch(server_name="0.0.0.0", server_port=8080)
+    return demo
 
+
+@app.get("/")
+def read_main():
+    return {"message": "This is the main app. Access the Gradio interface at /tiledb"}
+
+if __name__ == "__main__":
+    io=create_gradio_app()
+    gradio_app = gr.routes.App.create_app(io)
+    app.mount(CUSTOM_PATH, gradio_app)
+    uvicorn.run(app, host="0.0.0.0", port=8080)

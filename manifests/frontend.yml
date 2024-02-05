@@ -1,39 +1,82 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: llm-deployment
+  name: demo-deployment
+  namespace: christensenc3526
   labels:
-    app: llm
+    app: demo
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: llm
+      app: demo
   template:
     metadata:
       labels:
-        app: llm
+        app: demo
     spec:
       containers:
-      - name: llm-container
-        image: <your-docker-image-name>:<tag>
+      - name: demo-app
+        image: chasechristensen/tiledb_demo_frontend:v22
         ports:
-        - containerPort: 8080
-        env:
-        - name: GRADIO_SERVER_PORT
-          value: "8080"
-        - name: GRADIO_SERVER_NAME
-          value: "0.0.0.0"
+          - name: http
+            containerPort: 8080
+            protocol: TCP  
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: llm-transformer-default
+  name: demo
+  namespace: christensenc3526
 spec:
   selector:
-    app: llm
+    app: demo
   ports:
   - protocol: TCP
     port: 80
     targetPort: 8080
+    name: http  
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: tiledb-virtual-service
+  namespace: christensenc3526  # Match this with your service's namespace
+spec:
+  gateways:
+    - kubeflow-gateway
+  hosts:
+    - '*'
+  http:
+    - match:
+        - uri:
+            prefix: /tiledb
+      rewrite:
+        uri: /
+      route:
+        - destination:
+            host: demo.christensenc3526.svc.cluster.local
+            port:
+              number: 80
+       
+---
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: demo-service-external-access
+  namespace: christensenc3526
+spec:
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods: ["GET", "POST"]  # Adjust based on the methods your service requires
+        paths: ["/tiledb/*"]  # Adjust if your service listens on different paths
+  - from:
+    - source:
+        requestPrincipals: ["*"]  # Allows access from any authenticated user (consider narrowing this down)
+  selector:
+    matchLabels:
+      app: demo
 
