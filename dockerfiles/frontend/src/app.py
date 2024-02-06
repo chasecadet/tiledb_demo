@@ -20,7 +20,7 @@ INSTRUCTION = "Use the following pieces of context to answer the question at the
 example_questions = [
     ["How does this demo work?"],
     ["Why TileDB for vector databases?"],
-    ["Do vector datatbases use dense or sparse arrays?"]
+    ["Do vector databases use dense or sparse arrays?"]
 ]
 
 
@@ -57,7 +57,7 @@ def llm_service(question, system, instruction, temperature, num_docs, max_tokens
 
 def create_gradio_app():
     with gr.Blocks(theme=TileDBTheme()) as demo:
-        gr.Markdown("![ai-enabled-search](file/app-header.png)")
+       gr.Markdown(css + "![ai-enabled-search](file/app-header.png)")
         with gr.Row():
             question = gr.Textbox(label="Question", autofocus=True)
         with gr.Row():
@@ -131,16 +131,14 @@ def create_gradio_app():
                      False, None], [],
             outputs=[question, system, instruction, temperature, num_docs,
                      max_tokens, top_k, top_p, context_check, output])
-
     return demo
-
-
 @app.get("/")
 def read_main():
     return {"message": "This is the main app. Access the Gradio interface at /tiledb"}
 
 if __name__ == "__main__":
     io=create_gradio_app()
+    io.queue()
     gradio_app = gr.routes.App.create_app(io)
     app.mount(CUSTOM_PATH, gradio_app)
     uvicorn.run(app, host="0.0.0.0", port=8080)

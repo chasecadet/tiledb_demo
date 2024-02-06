@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: demo-app
-        image: chasechristensen/tiledb_demo_frontend:1.0.0
+        image: chasechristensen/tiledb_demo_frontend:v1.0.2
         ports:
           - name: http
             containerPort: 8080
