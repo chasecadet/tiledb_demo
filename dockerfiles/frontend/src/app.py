@@ -57,7 +57,16 @@ def llm_service(question, system, instruction, temperature, num_docs, max_tokens
 
 def create_gradio_app():
     with gr.Blocks(theme=TileDBTheme()) as demo:
-       gr.Markdown(css + "![ai-enabled-search](file/app-header.png)")
+                css = """
+        <style>
+        img {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        </style>
+        """
+        gr.Markdown(css + "![ai-enabled-search](file/app-header.png)")
         with gr.Row():
             question = gr.Textbox(label="Question", autofocus=True)
         with gr.Row():
@@ -85,7 +94,7 @@ def create_gradio_app():
                             " creativity but decrease factuality.")
                     max_tokens = gr.Number(
                         label="Max Tokens",
-                        minimum=10, maximum=1000, value=100,
+                        minimum=10, maximum=5000, value=100,
                         info="The maximum number of tokens to generate.")
                     num_docs = gr.Number(
                         label="Number of documents to retrieve",
