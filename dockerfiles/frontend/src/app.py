@@ -57,16 +57,7 @@ def llm_service(question, system, instruction, temperature, num_docs, max_tokens
 
 def create_gradio_app():
     with gr.Blocks(theme=TileDBTheme()) as demo:
-                css = """
-        <style>
-        img {
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        </style>
-        """
-        gr.Markdown(css + "![ai-enabled-search](file/app-header.png)")
+        gr.Markdown("![ai-enabled-search](file/app-header.png)")
         with gr.Row():
             question = gr.Textbox(label="Question", autofocus=True)
         with gr.Row():
@@ -147,7 +138,7 @@ def read_main():
 
 if __name__ == "__main__":
     io=create_gradio_app()
-    io.queue()
+    #io.queue()
     gradio_app = gr.routes.App.create_app(io)
     app.mount(CUSTOM_PATH, gradio_app)
     uvicorn.run(app, host="0.0.0.0", port=8080)
