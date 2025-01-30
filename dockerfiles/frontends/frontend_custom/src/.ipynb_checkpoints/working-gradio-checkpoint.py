@@ -3,7 +3,7 @@ import gradio as gr
 import os
 
 app = FastAPI()
-CUSTOM_PATH = os.environ.get("CUSTOM_PATH", "/professorflow")
+CUSTOM_PATH = os.environ.get("CUSTOM_PATH", "/professorflow/")
 
 # Define the Gradio interface function
 def greet(name, intensity):
