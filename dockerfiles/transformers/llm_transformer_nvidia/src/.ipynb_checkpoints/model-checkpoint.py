@@ -11,7 +11,6 @@ class Transformer(Model):
     def __init__(self, name: str, predictor_host: str, protocol: str,
                  use_ssl: bool, vectorstore_name: str = "vectorstore"):
         super().__init__(name)
-        # KServe specific arguments
         self.name = name
         self.predictor_host = predictor_host
         self.protocol = protocol
@@ -60,8 +59,8 @@ class Transformer(Model):
 
         logger.info(f"Retrieved Context:\n{context}")
 
-        # Construct the correct LLM predictor URL
-        predictor_url = f"http://{self.predictor_host}/v1/chat/completions"
+        # 🔥 FIX: Ensure correct predictor URL
+        predictor_url = f"http://{self.predictor_host}.svc.cluster.local/v1/chat/completions"
         logger.info(f"Sending request to LLM predictor at {predictor_url}")
 
         llm_payload = {
