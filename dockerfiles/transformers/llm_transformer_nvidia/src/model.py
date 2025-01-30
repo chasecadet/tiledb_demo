@@ -2,7 +2,6 @@ import json
 import logging
 import argparse
 import requests
-import httpx
 from kserve import Model, ModelServer, model_server
 
 logger = logging.getLogger(__name__)
@@ -12,12 +11,12 @@ class Transformer(Model):
                  use_ssl: bool, vectorstore_name: str = "vectorstore"):
         super().__init__(name)
         self.name = name
-        self.predictor_host = predictor_host
+        self.predictor_host = predictor_host  # ✅ KServe passes this correctly
         self.protocol = protocol
         self.use_ssl = use_ssl
         self.ready = True
 
-        # Transformer specific arguments
+        # Transformer-specific arguments
         self.vectorstore_name = vectorstore_name
         self.vectorstore_url = self._build_vectorstore_url()
 
@@ -27,22 +26,21 @@ class Transformer(Model):
     def _build_vectorstore_url(self):
         domain_name = "svc.cluster.local"
         namespace = self._get_namespace()
-        deployment_name = self.vectorstore_name
-        model_name = deployment_name
-        svc = f"{deployment_name}-predictor.{namespace}.{domain_name}"
-        return f"http://{svc}/v1/models/{model_name}:predict"
+        svc = f"{self.vectorstore_name}-predictor.{namespace}.{domain_name}"
+        return f"http://{svc}/v1/models/{self.vectorstore_name}:predict"
 
     def preprocess(self, request: dict, headers: dict) -> dict:
+        """
+        Preprocess request: If no context, retrieve documents.
+        """
         data = request["instances"][0]
         query = data["input"]
         logger.info(f"Received question: {query}")
+        
         num_docs = data.get("num_docs", 4)
         context = data.get("context", None)
 
-        if context:
-            logger.info(f"Received context: {context}")
-            logger.info("Skipping retrieval step...")
-        else:
+        if not context:
             payload = {"instances": [{"input": query, "num_docs": num_docs}]}
             logger.info(f"Retrieving relevant documents from: {self.vectorstore_url}")
 
@@ -56,8 +54,19 @@ class Transformer(Model):
 
         logger.info(f"Retrieved Context:\n{context}")
 
-        # 🔥 FIX: Ensure correct predictor URL
-        predictor_url = f"http://{self.predictor_host}.svc.cluster.local/v1/chat/completions"
+        # ✅ Return structured response for predict() to process
+        return {"instances": [{"query": query, "context": context}]}
+
+    def predict(self, request: dict, headers: dict) -> dict:
+        """
+        Call LLM with retrieved context and return the response.
+        """
+        data = request["instances"][0]
+        query = data["query"]
+        context = data["context"]
+
+        # ✅ Ensure correct predictor URL
+        predictor_url = f"http://{self.predictor_host}/v1/chat/completions"
         logger.info(f"Sending request to LLM predictor at {predictor_url}")
 
         llm_payload = {
@@ -66,9 +75,9 @@ class Transformer(Model):
                 {"role": "system", "content": "You are an AI assistant."},
                 {"role": "user", "content": f"Context: {context}\n\nQuestion: {query}"}
             ],
-            "temperature": data.get("temperature", 0.5),
-            "top_p": data.get("top_p", 1),
-            "max_tokens": int(data.get("max_tokens", 256)),
+            "temperature": 0.5,
+            "top_p": 1,
+            "max_tokens": 256,
             "stream": False
         }
 
@@ -86,24 +95,14 @@ class Transformer(Model):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(parents=[model_server.parser])
-    parser.add_argument(
-        "--predictor_host", help="The URL for the model predict function",
-        required=True)
-    parser.add_argument(
-        "--protocol", help="The protocol for the predictor", default="v1")
-    parser.add_argument(
-        "--model_name", help="The name that the model is served under.")
-    parser.add_argument(
-        "--use_ssl", help="Use SSL for connecting to the predictor",
-        action='store_true')
-    parser.add_argument("--vectorstore_name", default="vectorstore",
-                        required=False,
-                        help="The name of the Vector Store Inference Service")
+    parser.add_argument("--predictor_host", help="The URL for the model predict function", required=True)
+    parser.add_argument("--protocol", help="The protocol for the predictor", default="v1")
+    parser.add_argument("--model_name", help="The name that the model is served under.")
+    parser.add_argument("--use_ssl", help="Use SSL for connecting to the predictor", action='store_true')
+    parser.add_argument("--vectorstore_name", default="vectorstore", required=False, help="The name of the Vector Store Inference Service")
+    
     args, _ = parser.parse_known_args()
-
     logger.info(args)
 
-    model = Transformer(
-        args.model_name, args.predictor_host, args.protocol, args.use_ssl,
-        args.vectorstore_name)
+    model = Transformer(args.model_name, args.predictor_host, args.protocol, args.use_ssl, args.vectorstore_name)
     ModelServer().start([model])
