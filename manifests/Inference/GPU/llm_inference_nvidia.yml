@@ -21,7 +21,7 @@ spec:
   transformer:
     timeout: 600
     containers:
-      - image: chasechristensen/transformer-nvidia-nim:1.0
+      - image: chasechristensen/transformer-nvidia-nim:1.1
         imagePullPolicy: Always
         resources:
           requests:

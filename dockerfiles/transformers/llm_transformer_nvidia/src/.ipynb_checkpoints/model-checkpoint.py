@@ -30,61 +30,55 @@ class Transformer(Model):
         return f"http://{svc}/v1/models/{self.vectorstore_name}:predict"
 
     def preprocess(self, request: dict, headers: dict) -> dict:
-        """
-        Preprocess request: If no context, retrieve documents.
-        """
         data = request["instances"][0]
         query = data["input"]
-        logger.info(f"Received question: {query}")
-        
+        logger.info(f"🛠 Received question: {query}")
+
         num_docs = data.get("num_docs", 4)
         context = data.get("context", None)
 
         if not context:
             payload = {"instances": [{"input": query, "num_docs": num_docs}]}
-            logger.info(f"Retrieving relevant documents from: {self.vectorstore_url}")
+            logger.info(f"🔎 Retrieving relevant docs from: {self.vectorstore_url}")
 
             response = requests.post(self.vectorstore_url, json=payload, verify=False)
             response_data = response.json()
+            context = "\n".join(response_data["predictions"]) if response.status_code == 200 else "No relevant documents found."
 
-            if response.status_code == 200 and "predictions" in response_data:
-                context = "\n".join(response_data["predictions"])
-            else:
-                context = "No relevant documents found."
+        logger.info(f"📜 Retrieved Context:\n{context}")
 
-        logger.info(f"Retrieved Context:\n{context}")
+        # 🔥 Forward all original fields, not just query and context
+        transformed_data = {
+            **data,  # Keep all parameters from Gradio input
+            "query": query,
+            "context": context
+        }
 
-        # ✅ Return structured response for predict() to process
-        return {"instances": [{"query": query, "context": context}]}
+        logger.info(f"🔀 Transformed data: {json.dumps(transformed_data, indent=2)}")
+        return {"instances": [transformed_data]}
+
 
     def predict(self, request: dict, headers: dict) -> dict:
-        """
-        Call LLM with retrieved context and return the response.
-        """
         data = request["instances"][0]
         query = data["query"]
         context = data["context"]
 
-        logger.info(f"🛠 Received request: {json.dumps(data, indent=2)}")
-
-        # ✅ Ensure correct predictor URL
         predictor_url = f"http://{self.predictor_host}/v1/chat/completions"
-        logger.info(f"📡 Sending request to LLM predictor at {predictor_url}")
+        logger.info(f"🚀 Sending request to LLM predictor at {predictor_url}")
 
         llm_payload = {
             "model": "meta/llama-2-7b-chat",
             "messages": [
-                {"role": "system", "content": "You are an AI assistant."},
-                {"role": "user", "content": f"Context: {context}\n\nQuestion: {query}"}
+                {"role": "system", "content": data.get("system", "You are an AI assistant.")},
+                {"role": "user", "content": f"{data.get('instruction', 'Answer the question.')}\n\nContext: {context}\n\nQuestion: {query}"}
             ],
-            "temperature": data.get("temperature", 0.5),  # 👈 Dynamic now!
+            "temperature": data.get("temperature", 0.5),
             "top_p": data.get("top_p", 1),
-            "max_tokens": int(data.get("max_tokens", 256)),  # 👈 Should reflect changes!
+            "max_tokens": int(data.get("max_tokens", 256)),
             "stream": False
         }
 
-        logger.info(f"📩 Payload sent to LLM: {json.dumps(llm_payload, indent=2)}")
-
+        logger.info(f"📤 LLM Payload: {json.dumps(llm_payload, indent=2)}")
         llm_response = requests.post(predictor_url, json=llm_payload, verify=False)
 
         if llm_response.status_code == 200:
@@ -95,6 +89,7 @@ class Transformer(Model):
             error_message = f"❌ Error calling LLM predictor: {llm_response.status_code} - {llm_response.text}"
             logger.error(error_message)
             return {"predictions": [error_message]}
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(parents=[model_server.parser])
