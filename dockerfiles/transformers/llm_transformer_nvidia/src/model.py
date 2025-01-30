@@ -2,15 +2,21 @@ import json
 import logging
 import argparse
 import requests
+
+import httpx
+
 from kserve import Model, ModelServer, model_server
+
 
 logger = logging.getLogger(__name__)
 
+PREDICTOR_URL_FORMAT = "http://{0}/v1/models/vi/chat/completions"
 
 class Transformer(Model):
     def __init__(self, name: str, predictor_host: str, protocol: str,
                  use_ssl: bool, vectorstore_name: str = "vectorstore"):
         super().__init__(name)
+        # KServe specific arguments
         self.name = name
         self.predictor_host = predictor_host
         self.protocol = protocol
@@ -22,7 +28,9 @@ class Transformer(Model):
         self.vectorstore_url = self._build_vectorstore_url()
 
     def _get_namespace(self):
-        return open("/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r").read().strip()
+        return (open(
+            "/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r")
+            .read())
 
     def _build_vectorstore_url(self):
         domain_name = "svc.cluster.local"
@@ -34,58 +42,35 @@ class Transformer(Model):
         url = f"http://{svc}/v1/models/{model_name}:predict"
         return url
 
+    @property
+    def _http_client(self):
+        if self._http_client_instance is None:
+            # No Authorization header needed
+            self._http_client_instance = httpx.AsyncClient(verify=False)  # Removed headers argument
+        return self._http_client_instance
+
     def preprocess(self, request: dict, headers: dict) -> dict:
         data = request["instances"][0]
         query = data["input"]
-        num_docs = data.get("num_docs", 4)
-        system_message = data.get("system", "You are an AI assistant.")
-        instruction = data.get("instruction", "Answer the question using the context below.")
-
         logger.info(f"Received question: {query}")
+        num_docs = data.get("num_docs", 4)
         context = data.get("context", None)
-
-        # If no context is provided, retrieve documents from the vector store
-        if not context:
-            payload = {"instances": [{"input": query, "num_docs": num_docs}]}
-            logger.info(f"Retrieving relevant documents from: {self.vectorstore_url}")
-
-            response = requests.post(self.vectorstore_url, json=payload, verify=False)
-            response_data = response.json()
-
-            if response.status_code == 200 and "predictions" in response_data:
-                context = "\n".join(response_data["predictions"])
-            else:
-                context = "No relevant documents found."
-
-        logger.info(f"Retrieved Context:\n{context}")
-
-        # 🔥 FIX: Ensure correct predictor URL
-        predictor_url = f"http://{self.predictor_host}.svc.cluster.local/v1/chat/completions"
-        logger.info(f"Sending request to LLM predictor at {predictor_url}")
-
-        llm_payload = {
-            "model": "meta/llama-2-7b-chat",
-            "messages": [
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": f"{instruction}\n\nContext: {context}\n\nQuestion: {query}"}
-            ],
-            "temperature": data.get("temperature", 0.5),
-            "top_p": data.get("top_p", 1),
-            "max_tokens": int(data.get("max_tokens", 256)),
-            "stream": False
-        }
-
-        llm_response = requests.post(predictor_url, json=llm_payload, verify=False)
-
-        if llm_response.status_code == 200:
-            result = llm_response.json()["choices"][0]["message"]["content"]
-            logger.info(f"LLM Response: {result}")
-            return {"predictions": [result]}
+        if context:
+            logger.info(f"Received context: {context}")
+            logger.info(f"Skipping retrieval step...")
+            return {"instances": [data]}
         else:
-            error_message = f"Error calling LLM predictor: {llm_response.status_code} - {llm_response.text}"
-            logger.error(error_message)
-            return {"predictions": [error_message]}
+            payload = {"instances":[{"input": query, "num_docs": num_docs}]}
+            logger.info(
+                f"Receiving relevant docs from: {self.vectorstore_url}")
 
+            response = requests.post(
+                self.vectorstore_url, json=payload,
+                verify=False)
+            response = json.loads(response.text)
+            context = "\n".join(response["predictions"])
+            logger.info(f"Received documents: {context}")
+            return {"instances": [{**data, **{"context": context}}]}
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(parents=[model_server.parser])
@@ -97,7 +82,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_name", help="The name that the model is served under.")
     parser.add_argument(
-        "--use_ssl", help="Use SSL for connecting to the predictor",
+        "--use_ssl", help="Use ssl for connecting to the predictor",
         action='store_true')
     parser.add_argument("--vectorstore_name", default="vectorstore",
                         required=False,
