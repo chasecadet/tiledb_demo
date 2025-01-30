@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: demo-app
-        image: chasechristensen/tiledb_demo_frontend:v1.0.9
+        image: chasechristensen/tiledb_demo_frontend:1.10
         ports:
           - name: http
             containerPort: 8080
@@ -50,9 +50,9 @@ spec:
   http:
     - match:
         - uri:
-            prefix: /tiledb
+            prefix: /professorflow
       rewrite:
-        uri: /tiledb
+        uri: /professorflow
       route:
         - destination:
             host: demo.christensenc3526.svc.cluster.local
@@ -72,7 +72,7 @@ spec:
   - to:
     - operation:
         methods: ["GET", "POST"]  # Adjust based on the methods your service requires
-        paths: ["/tiledb/*"]  # Adjust if your service listens on different paths
+        paths: ["/professorflow/*"]  # Adjust if your service listens on different paths
   - from:
     - source:
         requestPrincipals: ["*"]  # Allows access from any authenticated user (consider narrowing this down)

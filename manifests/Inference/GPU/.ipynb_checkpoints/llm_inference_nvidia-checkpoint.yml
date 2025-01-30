@@ -21,7 +21,7 @@ spec:
   transformer:
     timeout: 600
     containers:
-      - image: chasechristensen/tiledb_transformer:v6
+      - image: chasechristensen/transformer-nvidia-nim:0.1
         imagePullPolicy: Always
         resources:
           requests:
