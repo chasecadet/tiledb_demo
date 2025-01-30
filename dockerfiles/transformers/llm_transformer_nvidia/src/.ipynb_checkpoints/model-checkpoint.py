@@ -62,46 +62,39 @@ class Transformer(Model):
         Call LLM with retrieved context and return the response.
         """
         data = request["instances"][0]
+        query = data["query"]
+        context = data["context"]
 
-        # ✅ Dynamically retrieve user inputs from request
-        query = data.get("input", "")  # Ensure query isn't missing
-        context = data.get("context", "")  # Default to empty context if not provided
-        system_message = data.get("system", "You are an AI assistant.")  # Dynamic system message
-        instruction = data.get("instruction", "Use the following context to answer the question.")
+        logger.info(f"🛠 Received request: {json.dumps(data, indent=2)}")
 
         # ✅ Ensure correct predictor URL
         predictor_url = f"http://{self.predictor_host}/v1/chat/completions"
-        logger.info(f"Sending request to LLM predictor at {predictor_url}")
+        logger.info(f"📡 Sending request to LLM predictor at {predictor_url}")
 
-        # ✅ Allow dynamic values for LLM parameters
         llm_payload = {
-            "model": data.get("model", "meta/llama-2-7b-chat"),  # Use provided model, default to Llama-2-7B
+            "model": "meta/llama-2-7b-chat",
             "messages": [
-                {"role": "system", "content": system_message},  # Custom system message
-                {"role": "user", "content": f"{instruction}\n\nContext: {context}\n\nQuestion: {query}"}
+                {"role": "system", "content": "You are an AI assistant."},
+                {"role": "user", "content": f"Context: {context}\n\nQuestion: {query}"}
             ],
-            "temperature": float(data.get("temperature", 0.5)),  # Convert to float for safety
-            "top_p": float(data.get("top_p", 1)),  # Convert to float
-            "max_tokens": int(data.get("max_tokens", 256)),  # Convert to int
-            "stream": data.get("stream", False)  # Boolean support
+            "temperature": data.get("temperature", 0.5),  # 👈 Dynamic now!
+            "top_p": data.get("top_p", 1),
+            "max_tokens": int(data.get("max_tokens", 256)),  # 👈 Should reflect changes!
+            "stream": False
         }
 
-        # 🔥 Log Payload to Debug
-        logger.info(f"Payload to LLM: {json.dumps(llm_payload, indent=2)}")
+        logger.info(f"📩 Payload sent to LLM: {json.dumps(llm_payload, indent=2)}")
 
-        # ✅ Send request to LLM predictor
         llm_response = requests.post(predictor_url, json=llm_payload, verify=False)
 
         if llm_response.status_code == 200:
-            result = llm_response.json().get("choices", [{}])[0].get("message", {}).get("content", "No response")
-            logger.info(f"LLM Response: {result}")
+            result = llm_response.json()["choices"][0]["message"]["content"]
+            logger.info(f"✅ LLM Response: {result}")
             return {"predictions": [result]}
         else:
-            error_message = f"Error calling LLM predictor: {llm_response.status_code} - {llm_response.text}"
+            error_message = f"❌ Error calling LLM predictor: {llm_response.status_code} - {llm_response.text}"
             logger.error(error_message)
             return {"predictions": [error_message]}
-
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(parents=[model_server.parser])
