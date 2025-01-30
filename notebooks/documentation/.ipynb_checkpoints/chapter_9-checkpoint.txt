@@ -1,0 +1,255 @@
+Ch 9. Conquering Katib 
+
+Chapter Introduction
+Chapter Overview
+Hyperparameter tuning on Kubernetes can be complex. Still, Katib is here to help by abstracting away many of its complexities and improving how we submit jobs. This chapter will introduce hyperparameters and hyperparameter tuning, search algorithms, and AutoML. Then, we will explore Katib and watch a demonstration video showing you how to launch a primary Katib job. Finally, we will introduce the Neural Architecture Search (NAS) feature, a process within artificial intelligence that automates the design of artificial neural networks.
+
+Learning Objectives
+By the end of this chapter, you should be able to:
+Describe the Katib UI
+Discuss the various ways to interface with Katib
+Describe the purpose of hyperparameter tuning
+Explain the purpose  of AutoML 
+Create an Ackley Katib experiment
+Discuss Neural Architecture Search 
+
+Hyperparameter Tuning
+Introduction
+This section will help us understand the concepts that comprise hyperparameter tuning. 
+We will cover: 
+The foundational definition of a hyperparameter
+How training algorithms, model types, and metrics impact our hyperparameters
+The common challenges with hyperparameter tuning
+The role of search algorithms
+Some basic guidelines for selecting a search algorithm
+
+Hyperparameters
+Hyperparameter tuning is adjusting the model's hyperparameters, the external configurations set before training and not learned from the data. These include settings like the learning rate, the number of layers in a neural network, and regularization parameters, which significantly influence the model's learning process and overall performance. The objective of hyperparameter tuning is to find the optimal set of hyperparameters that results in the best possible performance of the model on a given task. Adjusting these hyperparameters changes the model's capacity to learn from data, affecting its complexity and generalization ability. The choice and tuning of these hyperparameters can significantly affect the performance and effectiveness of the training process. Let’s explore a few training algorithms and their associated hyperparameters. 
+
+Gradient Descent-Based Algorithms
+Learning Rate: Controls the number of steps the algorithm takes towards the minimum of the loss function. Too large a learning rate can cause overshooting, while too small can lead to slow convergence.
+Momentum: Helps to accelerate the algorithm in the right direction, smoothing out updates.
+Batch Size: Influences the amount of data used to calculate each update, affecting the stability and speed of convergence.
+Decision Tree-Based Algorithms
+Maximum Depth: Limits the depth of the tree to prevent overfitting.
+Minimum Samples Split: The minimum number of samples required to split an internal node.
+Maximum Number of Features: The number of features to consider when looking for the best split.
+Neural Networks
+The number of Layers and Units per Layer: Determines the neural network's architecture, affecting its capacity to learn complex patterns.
+Activation Function: This function influences how the weighted sum of the input is transformed before being passed to the next layer.
+Dropout Rate: A regularization technique that ignores randomly selected neurons during training, reducing overfitting.
+Ensemble Methods (e.g., Random Forest, Gradient Boosting)
+Number of Estimators: The number of trees in the forest or the number of boosting stages.
+Learning Rate (for Boosting): Controls how much each additional tree contributes to the prediction.
+Max Features: The size of the random subsets of features to consider when splitting a node.
+These hyperparameters (and their associated algorithms) can be tuned to find the best possible model performance. However, identifying the loss function's absolute minimum (global minimum) in the hyperparameter space is challenging, especially in complex models and high-dimensional spaces with numerous local minima. This complexity makes achieving certainty about finding the global minimum practically difficult without extensive experimentation. 
+Hyperparameters: Challenges
+Let’s explore some of the challenges associated with hyperparameters:
+
+Complexity of the Loss Landscape
+For example, the loss landscape of deep learning models can be highly non-convex with many peaks and valleys (local minima). Different hyperparameter configurations can lead the optimization process to other parts of this landscape, making it uncertain whether a found minimum is local or global.
+High-Dimensional Hyperparameter Space
+With an increasing number of hyperparameters, the search space becomes exponentially larger. This phenomenon, known as the "curse of dimensionality," makes it impractical to exhaustively explore every possible combination of hyperparameters to ensure the global minimum is found. Hyperparameter tuning is already very compute intensive, and high-dimensional space doesn’t help reduce our cloud spend. 
+Dependency on Evaluation Metrics
+Whether a minimum has been reached depends on the performance metrics (e.g., accuracy, precision, recall). Different metrics suggest different optimal hyperparameter configurations, and the choice of metric depends on the specific application and goals. You can learn more here: "Selecting Metrics for Machine Learning."
+Each evaluation involves training a model with a specific set of hyperparameters, which can be very resource-intensive, especially with complex models like deep neural networks. Often, we have to ask ourselves,” Is it worth it?” when determining how large of a range to set for our experiments. How much performance can we get in return for our time, resources, and money? Once we understand the general range based on our budget and outcomes, we can use a search algorithm to design our experiments.  
+Search Algorithms
+Hyperparameters are the settings that need to be optimized. Search algorithms are the methods by which we optimize those settings. The goal is to find the optimal (or near-optimal) set of hyperparameters in a reasonable amount of time.
+Let’s look at some examples of search algorithms: 
+Grid Search: This method evaluates the model across a grid of hyperparameter combinations. It is simple but can be very time-consuming as the number of hyperparameters increases.
+Random Search: This method evaluates the model using random combinations of hyperparameters. It can be more efficient than grid search, especially when some hyperparameters are more critical than others.
+Bayesian Optimization: This method uses a probabilistic model to guide the search for the best hyperparameters. It focuses on areas with higher potential to find the optimal set with fewer evaluations.
+Gradient-based Optimization: Utilizes gradients to find hyperparameters that minimize the validation loss, applicable to differentiable hyperparameters.
+Evolutionary Algorithms: Mimics the process of natural selection to iteratively select, combine, and mutate hyperparameters towards better performance.
+Search algorithms can be applied to optimize hyperparameters across different types of machine learning models, regardless of their specific architectures or the nature of the data on which they are trained. Choosing a search algorithm requires finesse. An exhaustive guide is beyond the scope of this course, but selecting the suitable search algorithm is a critical skill for machine learning engineers, data scientists, or AI research scientists. Therefore, we will provide guidance using a physical world treasure hunt example.
+Hunting for Treasure with Bayesian Optimization
+We mentioned previously that the loss landscape of deep learning models can be highly non-convex, with many peaks and valleys. Observing a loss landscape is similar to standing atop a mountain or hill overlooking the countryside. From this vantage point, you can see other mountains, saddles in between those mountains, and valleys rolling in the distance. Let’s imagine you are looking for treasure in this landscape. You arrive at this overlook just in time to watch the sunrise but only have enough water and food to last until sundown. You have the Random Search, Grid Search, and Bayesian optimization algorithms at your disposal. You must seek the best strategy to prevent losing time and running out of energy during the hunt. 
+The following should be considered when picking a search algorithm to help find the treasure:
+
+How big and complicated is the search?: Imagine you're looking for a treasure in a vast forest. Bayesian optimization is like having an intelligent map that learns where you might find treasure based on where you have already looked. It helps you focus on promising areas without checking every single spot. Grid search, however, is like checking every predetermined spot on the map, which can be overwhelming in a vast forest.
+How much time and resources are available?: If you have limited time or need more resources on the treasure hunt, Bayesian optimization helps by making intelligent guesses to find treasure with fewer searches. It's more efficient than grid search, which tries every spot and can take a lot of time and effort.
+How tricky is the search?: If finding the treasure is tricky because clues to its location change depending on where you've looked, Bayesian optimization can be pretty handy. It builds a model of your search, making educated guesses about the best places to look, which can be more effective than just choosing spots at random or checking every possible location.
+How can we make the most of every search? Bayesian optimization is like making every search count more toward finding the treasure. It is beneficial when each search requires effort, like digging deep holes. It often gets you closer to the treasure with fewer searches than randomly choosing places to dig.
+How much search experience do you have? If you're new to treasure hunting, starting with methods like grid search or random search might be easier because they're straightforward—like following a simple map or just wandering around. Bayesian optimization and other advanced techniques can offer better strategies, but they might need more learning and effort to be used effectively.
+
+
+Conclusion
+In conclusion, hyperparameters are configurations we can adjust to improve a model's performance, but unlike features, these configurations are external to the model and do not pertain to the data. The hyperparameter choice depends on the model type, training algorithm, and the metrics we are optimizing for. Hyperparameter tuning is an experiment-style workflow where we set boundaries and run tests to find ways to tune our model. Finding the exact settings without experimentation is complicated due to concepts like the curse of dimensionality. To solve the need to experiment to find our optimal configurations, we use search algorithms, which are the methods by which we optimize hyperparameter settings. Search algorithms can be applied to optimize hyperparameters across different types of machine learning models, regardless of their specific architectures or the nature of the data they are trained on. Choosing the suitable search algorithm depends on your expertise with the modeling problem and the resources you will allocate to the project. 
+As data professionals, we must ask ourselves how great the return on investment is in optimizing our model. Does our model need 99.99% accuracy, or do we get a successful business outcome with 98%? We may even ask if accuracy is the appropriate metric for our model. Katib, the AutoML and hyperparameter tuning solution for Kubeflow, provides a solution that enables us to experiment rapidly using the power of Kubernetes while setting boundaries, such as user-defined optimization goals and trial attempt limits. These boundaries prevent us from going over budget when experimenting. Let’s dive deeper into Katib in our next section.
+
+Intro to AutoML with Katib
+Introduction
+Katib is a Kubernetes-native project for automated machine learning (AutoML). AutoML builds and tunes a model (including hyperparameters) without requiring deep expertise. Katib’s goal is to be an AutoML solution for Kubeflow. 
+In this section, we will introduce and evaluate Katib’s AutoML capabilities through:
+Defining and Investigating AutoML
+Discussing Katib and its supported functionality
+Defining and Discussing Neural Architecture Search
+Walking through an example using the Ackley function
+Automated Machine Learning (AutoML)
+Before we dive into a discussion about Katib, we should first talk about AutoML or Automated Machine Learning. AutoML helps data scientists pick a model through a combination of processes designed to automate parts of the machine learning workflow. As discussed in our previous section, choosing a model and selecting the correct hyperparameters is complex. Beginners often feel like their decisions are random. This 2018 TensorFlow Dev Summit Keynote claims that with enough computing power, we can automate away these decisions, improving our success with tasks like hyperparameter tuning without depending on experience.
+
+AutoML can help data professionals by doing the following:
+
+1. Automating Preliminary Steps
+AutoML can help with data preprocessing. AutoML tools can automatically handle missing values, encode categorical variables, normalize or scale features, and select relevant features, saving time and reducing errors.
+These tools can also automatically generate new features and select the most relevant ones, significantly improving model performance.
+Tool Examples: DataRobot and H2O AutoML
+2. Exploring Multiple Models
+AutoML platforms test multiple machine learning models from various algorithms (like decision trees, support vector machines, neural networks, etc.) on the given dataset. This exploration is far broader and faster than a human data scientist could manually achieve.
+Tool Examples: Google Cloud AutoML and Auto-sklearn
+3. Optimizing Hyperparameters
+Hyperparameter tuning is critical for optimizing model performance. AutoML tools use techniques like grid search, random search, Bayesian optimization, or evolutionary algorithms to automatically and efficiently find the best hyperparameters for each model.
+Tool Examples: Hyperopt and Optuna
+4. Evaluating Model Performance
+AutoML evaluates each model’s performance using cross-validation or a hold-out validation set. It compares models based on accuracy, precision, recall, F1 score, or other relevant metrics specific to the task. 
+Tool Examples: MLflow and Weights & Biases
+Will AutoML Replace Data Scientists?
+AutoML may seem like a replacement for data science teams, but data professionals do much more than just train models. Data scientists need to oversee the process. Understanding the problem domain, interpreting model outputs, and ensuring that ethical and unbiased model development are aspects that AutoML cannot fully automate. We have included a Data Science Diagram below that will help us better understand the role of a data scientist within an MLOps team. Notice that  Data Scientists sit in the middle of Technical Craftsmanship (ad hoc engineering), Analytical Acumen(math and statistics), and Insightful Curiosity. It’s also worth noting that the zone where we describe a professional as someone who “knows just enough to be dangerous” is between Technical Craftsmanship and Insightful Curiosity. These individuals may understand how to use many ML tools but do not have the proper foundations to know what they have built. AutoML, without an appropriate understanding of the field of data science and how it can improve business outcomes at a foundational level, can create a risky culture of “knowing just enough to be dangerous” because eventually, when models or applications do perform suboptimally, a team needs to understand how they got there in the first place without over-relying on abstractions. Too many abstractions can make a team vulnerable to misinterpreting results or data quality issues, leading to suboptimal business outcomes.
+
+
+Data Science Venn Diagram
+
+
+AutoML is a tool used to help data scientists via automated methods for model selection and hyperparameter optimization. Specifically, AutoML can help data scientists with tasks such as data preprocessing and model selection. AutoML may seem like an automated data scientist, but teams that overuse AutoML may risk landing in the Danger Zone between general expertise and technology skills. AutoML is not a silver bullet that has abstracted away all the accidental complexity of machine learning. It helps improve our capacity to experiment and iterate quickly. Domain expertise is still required to run a successful data team. Now that we know what AutoML is (and isn’t), let’s learn about Katib! 
+Katib 
+Katib is Kubeflow’s AutoML solution. It allows teams to design and submit experiments through CustomResourceDefinitions and the Python SDK. Katib has several moving parts, so let's explore them further. 
+
+Experiments
+An Experiment is a series of trials seeking to optimize or reach an objective based on a search space using a search algorithm. One critical aspect of running hyperparameter tuning jobs on Katib is that the user needs to ensure their machine learning training code can be evaluated on every Katib trial with different hyperparameters. Essentially, the code must be able to pass the search space values (Katib parameters) to the algorithms and report back the results so that Katib can store the results and determine if the trial was a success. We can view and evaluate our experiments from the Experiments(AutoML) page on the Kubeflow central dashboard. The Overview tab contains details on the experiment, such as the best trial.
+
+Trials
+A Trial is a single Katib job that makes up an experiment.
+
+Objective
+The objective is what we are trying to optimize. Accuracy is a common objective we seek to maximize. Mean Squared Error (MSE) is an objective we may seek to minimize. 
+Suggestion
+A Suggestion is a set of hyperparameter values proposed by the hyperparameter tuning process. Katib creates a Trial to evaluate the suggested set of values.
+Worker Job
+A worker job is the actual process that runs the trial. It can be any type of Kubernetes resource or Kubernetes CRD. This templating functionality is how Katib can support using the Training Operator to support several machine learning frameworks. 
+
+Katib is currently in Beta. You can learn more about how Kubeflow supports these services in the Kubeflow Documentation. Below is an image from the official documentation that helps visualize how all the above concepts work together. Notice that the user would submit the training code on the left, and the far right represents our trials.
+
+
+
+
+
+
+Katib Submission
+Source: Kubeflow Documentation
+
+
+The Ackley Function
+The Ackley function is a well-known test problem for optimization algorithms. It's designed to be challenging due to its large number of local minima, making it an interesting case for demonstrating the capability of AutoML tools like Katib. 
+
+Below is a graph of a two-variable Ackley function. Notice all the peaks and valleys as we descend towards a global minimum. 
+
+
+
+Ackley Function Graph
+
+ALT= “A visual representation of the mathematical Ackley Function Graph”
+
+English: Ackley's function of two variables - plot done with D_2D & D_3D, Feb 2015, Pasimi, https://commons.wikimedia.org/wiki/File:Ackley%27s_function_(2).PNG#filelinks.
+
+
+Tuning An Ackley Function With Katib
+As previously discussed, a Trial is a single Katib job that makes up an experiment. We can see more details about our trials via the command line. Let’s explore some commands and outputs from an Ackley function Katib job. We will explore this job further in our supporting video.
+
+kubectl get trials
+
+NAME                     	TYPE    	STATUS   AGE
+ackley-experiment-2vkd722g   Succeeded   True 	90s
+ackley-experiment-47l9kx5p   Succeeded   True 	90s
+ackley-experiment-4stb2wfx   Succeeded   True 	70s
+ackley-experiment-hmq2wcbs   Succeeded   True 	41s
+ackley-experiment-jl44mghg   Succeeded   True 	43s
+ackley-experiment-m7n5mhjk   Succeeded   True 	72s
+ackley-experiment-mdnsnjdx   Succeeded   True 	101s
+ackley-experiment-mnc94mkq   Succeeded   True 	101s
+ackley-experiment-n7dvwrt6   Succeeded   True 	101s
+ackley-experiment-pqq8h9h5   Succeeded   True 	80s
+ackley-experiment-qf2h8mnn   Succeeded   True 	79s
+ackley-experiment-s7nbd9x7   Succeeded   True 	60s
+ackley-experiment-z44lng4w   Succeeded   True 	61s
+ackley-experiment-zcgb775g   Succeeded   True 	49s
+ackley-experiment-zpvs67vl   Succeeded   True 	52s
+
+
+kubectl get suggestions
+NAME            	TYPE    	STATUS   REQUESTED   ASSIGNED   AGE
+ackley-experiment   Succeeded   True 	15      	15     	2m11s
+
+kubectl describe suggestions
+…
+  Suggestion Count:    	15
+  Suggestions:
+    Name:  ackley-experiment-mdnsnjdx
+    Parameter Assignments:
+    Name:   x
+    Value:  0.6379392317638013
+    Name:   y
+    Value:  2.7035175079116414
+    Name: 	ackley-experiment-n7dvwrt6
+    Parameter Assignments:
+    Name:   x
+    Value:  0.5266416489408519
+    Name:   y
+    Value:  1.2453878625288182
+    Name: 	ackley-experiment-mnc94mkq
+    Parameter Assignments:
+    Name:   x
+    Value:  -1.1134593944615636
+    Name:   y
+    Value:  2.668350718615552
+    Name: 	ackley-experiment-2vkd722g
+    Parameter Assignments:
+    Name:   x
+    Value:  -0.6596843570247293
+    Name:   y
+    Value:  2.387846251208524
+…
+
+kubectl get experiments
+NAME            	TYPE    	STATUS   AGE
+ackley-experiment   Succeeded   True 	6m35s
+
+The above outputs are part of an Ackley function Katib experiment. We will launch a Katib hyperparameter tuning job and explore the output in the video.
+
+Video: An Ackley Function and Katib
+In this video, we will use the Katib SDK to submit an Ackley function optimization experiment. We will run 15 trials using a random search algorithm. We will visualize our results and determine the best run using Katib. 
+
+
+< Katib Experiment Walkthrough >
+
+
+Katib Neural Architecture Search
+What is the Katib Neural Architecture Search?
+Katib supports Neural Architecture Search as an alpha feature. Neural Architecture Search (NAS) is a process within artificial intelligence that automates the design of artificial neural networks. NAS aims to find the optimal network architecture for a given task. NAS operates by exploring a vast space of possible network architectures, evaluating each architecture's performance on a specific task, and then selecting the architecture that performs the best. 
+
+The search process involves three key components:
+
+
+Search Space: Defines the set of all possible architectures that the search algorithm can explore. It includes choices about the number of layers, types of layers (convolutional, recurrent, fully connected, etc.), activation functions, and other architectural elements.
+Search Strategy: Determines how the NAS algorithm navigates the search space. Common strategies include reinforcement learning, evolutionary algorithms, gradient-based methods, and random search. Each strategy proposes new architectures to evaluate based on the performance of previous architectures being assessed.
+Performance Estimation: Describes how the NAS algorithm evaluates the quality or performance of a given architecture. It usually involves training the proposed architecture on a dataset and measuring its performance using a specific metric, such as accuracy on a validation set. Because training can be computationally expensive, various techniques, such as weight sharing, network morphisms, or proxy tasks, are employed to estimate performance more efficiently.
+Efficient Neural Architecture Search vs Differentiable Architecture Search 
+
+Katib supports both Efficient Neural Architecture Search (ENAS) and Differentiable Architecture Search (DARTS)
+
+Efficient Neural Architecture Search (ENAS) represents a set of strategies and techniques to reduce the computational cost and time required for Neural Architecture Search (NAS), making it more feasible for practical applications. Traditional NAS methods can be highly resource-intensive, often necessitating vast computational resources to explore the architecture space fully. ENAS addresses these challenges by focusing on efficiency and speed without significantly compromising the quality of the resulting architectures. 
+
+Differentiable Architecture Search (DARTS) represents a significant advancement in Neural Architecture Search (NAS) by introducing an approach that allows the architecture search process to be gradient-based and hence differentiable. This innovation makes it possible to use gradient descent, a well-established optimization technique in machine learning, to find optimal network architectures efficiently.  
+
+
+Neural Architecture Search (NAS) is currently in alpha with limited support. The Kubeflow team is interested in any feedback you may have, particularly regarding the feature's usability. You can log issues and comments in the Katib issue tracker. 
+Conclusion 
+Katib is the AutoML solution for Kubeflow. Katib supports hyperparameter tuning and neural architecture search. Hyperparameters are configurations we can adjust to improve a model's performance, but unlike features, these configurations are external to the model and do not pertain to the data. With custom resources such as trials, experiments, and suggestions, we can design experiments for Katib to execute. We need a solution like Katib because finding the exact settings without experimentation is challenging due to concepts like the curse of dimensionality. A great example is the Ackley function, which has many minima. 
+
+The hyperparameter choice depends on the model type, training algorithm, and the metrics we are optimizing for, such as the number of layers in a neural network. Neural Architecture Search (NAS) does precisely that. NAS is a process within the field of artificial intelligence that automates the design of artificial neural networks. NAS aims to find the optimal network architecture for a given task.  
+
+
+These aspects allow us to hyperparameter tune on Kubernetes without understanding the underlying complexity.
+
+
+
+

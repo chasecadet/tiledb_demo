@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-deployment
+  namespace: christensenc3526
+  labels:
+    app: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo
+  template:
+    metadata:
+      labels:
+        app: demo
+    spec:
+      containers:
+      - name: demo-app
+        image: chasechristensen/tiledb_demo_frontend:v1.0.9
+        ports:
+          - name: http
+            containerPort: 8080
+            protocol: TCP  
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo
+  namespace: christensenc3526
+spec:
+  selector:
+    app: demo
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+    name: http  
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: tiledb-virtual-service
+  namespace: christensenc3526  # Match this with your service's namespace
+spec:
+  gateways:
+    - kubeflow/kubeflow-gateway
+  hosts:
+    - '*'
+  http:
+    - match:
+        - uri:
+            prefix: /tiledb
+      rewrite:
+        uri: /tiledb
+      route:
+        - destination:
+            host: demo.christensenc3526.svc.cluster.local
+            port:
+              number: 80
+       
+---
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: demo-service-external-access
+  namespace: christensenc3526
+spec:
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods: ["GET", "POST"]  # Adjust based on the methods your service requires
+        paths: ["/tiledb/*"]  # Adjust if your service listens on different paths
+  - from:
+    - source:
+        requestPrincipals: ["*"]  # Allows access from any authenticated user (consider narrowing this down)
+  selector:
+    matchLabels:
+      app: demo
+

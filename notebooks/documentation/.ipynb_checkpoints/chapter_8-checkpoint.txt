@@ -1,0 +1,411 @@
+Ch 8. Kubeflow Pipelines
+
+Chapter Introduction
+Chapter Overview
+The ability to schedule tasks sequentially using inputs from previous tasks and outputting them to the next is a core requirement for many platforms that build or deploy applications. Some widely adopted tools are Gitlab Pipelines, GitHub Actions, and Argo Workflows. ML toolkits are no different.  Machine learning applications have a complex build and training process that requires scheduling and passing information between specialized tasks, depending on the needs of a model development lifecycle step. Kubeflow Pipelines seeks to help us schedule and manage tasks in a generic and customizable way using high-level APIs, easily reusable Python-based components, and generic container components.  
+
+This chapter will:
+Introduce the Kubeflow pipeline API
+Discuss why pipelines are valuable for ML teams
+Investigate why containers improve our pipeline outcomes
+Explore the three main types of Kubeflow Components
+Walk through compiling and launching a simple pipeline.
+Walk through a complex pipeline that mixes and matches components.  
+Learning Objectives
+By the end of this chapter, you should be able to:
+Describe the importance of task scheduling and pipelines for ML teams
+Describe the value of containers as pipeline components 
+Compare and contrast the virtual machine runner, container runner, and containerized component pipeline strategies
+Describe the types of Kubeflow Pipeline Components
+Leverage the Kubeflow pipeline API to build a simple pipeline
+The Importance of Task Scheduling and Pipelines 
+Introduction
+In this section, we will explore the importance of task scheduling as a risk mitigation tool by:
+Discussing how task scheduling relates to pipelines
+Defending why it is in a team's best interest to adopt pipeline patterns
+Explaining how a simple data processing pipeline can become an error-prone (and risky) endeavor without the power of pipelines. 
+Task Scheduling and Pipelines 
+Task scheduling is a fundamental aspect of pipelines. It orchestrates the execution of various tasks within pipelines based on predefined criteria such as dependencies, priorities, and timing. In the context of Kubeflow Pipelines, task scheduling ensures that each component or task is executed in the correct order and at the right time, allowing for efficient workflow completion. The ultimate goal of any pipeline-like tool is to reduce risky human interactions with a system and ensure results that are easy to reproduce and replicate. 
+The Risks of Resistance 
+Reducing human interaction with systems can leave teams uneasy as they improve their MLOps maturity. Beyond our natural resistance to change, teams feel that automating themselves out of work will leave them without valuable duties and create a risk to their current employment status. These teams must realize that their manual efforts pose an even more significant threat to the business and, by extension, their roles.
+
+To explore these potential risks, let’s use the example of an extract, transform, and load (ETL) pipeline. ETL pipelines take data from various sources, convert it into a format other teams can leverage, and load it into a centralized location.  
+
+Let’s take a look at a pseudo example of a data processing pipeline, task by task:
+
+Step 1: Pre-Execution Checks
+Verify System Availability: Ensure that all systems involved in the ETL process (source databases, transformation processing servers, and target databases) are operational.
+Check Disk Space: Ensure sufficient disk space exists on the servers where extraction and transformation processes occur, and the final data will be stored.
+Confirm Schedule: Verify that the ETL job is initiated according to the predetermined schedule, typically during off-peak hours, to minimize impact on operational systems.
+Step 2: Extraction
+Connect to Source Systems: Establish connections to the source databases or file systems where the original data resides.
+Extract Data: Run the predefined extraction queries or scripts to collect the data from the source systems. Extraction might involve SQL queries, API calls, or reading files from a file system.
+Store Extracted Data: Temporarily store the extracted data in a staging area. Ensure data integrity and completeness.
+Step 3: Transformation
+Data Cleaning: Clean the extracted data by removing duplicates, correcting errors, and handling missing values.
+Data Validation: Ensure the data meets specific quality standards and validation rules.
+Transformation Logic: Apply the necessary transformation logic, including aggregations, calculations, filtering, and formatting, to prepare the data for its intended use in the target system.
+Pre-load Validation: Perform any final checks to ensure the transformed data meets the requirements of the target system.
+Step 4: Loading
+Prepare Target System: Ensure the target system is ready to receive the new data. Preparing our target system may involve clearing space, creating a backup of existing data, or designing the database schema.
+Load Data: Load the transformed data into the target system using the appropriate method (e.g., bulk insert, incremental updates).
+Verification: Verify that the data has been accurately and wholly transferred to the target system after loading.
+Step 5: Post-Execution Tasks
+Audit and Logging: Record the completion of the ETL process in the system logs. Include details such as start and end times, the volume of data processed, and any errors or warnings encountered.
+Error Handling: Review the logs for any errors or warnings. Address any issues identified during the process.
+Notification: Send a completion notification to stakeholders, including a summary of the ETL process outcome and any action items.
+Step 6: Clean-up
+Remove Temporary Files: To free up disk space, delete any temporary files or data used during the ETL process.
+Close Connections: Ensure all connections to source and target systems are properly closed to prevent security risks or resource leaks.
+Step 7: Review and Optimization
+Performance Review: Analyze the performance of the ETL process for potential bottlenecks or inefficiencies.
+Process Improvement: Based on the review, plan and implement improvements for future runs to enhance the speed, reliability, and accuracy of the ETL process.
+ETL Timeline Estimate
+Given the variables in our pseudo example, here's a rough estimation of the time required for a medium-complexity repeatable ETL job:
+Pre-Execution Checks: 15-30 minutes to verify system readiness and perform any necessary pre-checks.
+Extraction: 30 minutes to several hours, depending on the size and complexity of the data sources.
+Transformation: 1-4 hours, highly dependent on the data volume and complexity of the transformation rules.
+Loading: 30 minutes to several hours, similar to extraction, depending on the volume of data and the capabilities of the target system.
+Post-Execution Tasks: 30 minutes to 1 hour for audit, logging, error handling, and clean-up.
+
+Our ETL job timeline is a broad estimate. Still, For a medium-sized ETL job, assuming moderate complexity and data volume, a manual or semi-automated process might take 3 to 10 hours from start to finish. If any of these tasks fail due to a human error, our engineer may spend even more time troubleshooting or redoing tasks. The business needs clean data for our teams to use for modeling, and each mistake delays our model development further. If we hinder our model development, we cannot continue revenue-generating activity. Without revenue-generating activity, our teams are subject to the burn rate of the business or project budget, putting their roles at risk. If we wanted to run batch data jobs every day to ensure the freshness of our data, this ETL task could be all this engineer ever does. 
+
+In summary, allowing a machine to handle automated tasks improves our odds of reliably running pipelines that consistently perform a series of functions, such as extracting, transforming, and loading data. In the context of an MLOps team, pipeline tools enable us to focus on the essential complexity of the model development lifecycle instead of the risky endeavor of manual task execution. We need to mitigate the risk of manual task orchestration to avoid setting ourselves and the business up for failure. To learn more about the value of pipelines for data teams, check out this entry in the SRE handbook.
+How Containers Improve Task Scheduling
+Introduction
+Many modern orchestration tools use containers as their atomic unit, leveraging them as the fundamental building blocks for executing tasks. We know that containers help us with reproducibility, replicability, and reliability, but what are the specific benefits of using containers for task execution? To better understand the value of containers for pipelines, this section will explore alternative task scheduling patterns and where containerized workflow orchestration improved pipeline outcomes. 
+Virtual Machines and Task Orchestration
+
+When the industry adopted virtualization, they decided to take bare-metal servers, add a layer of complexity with a hypervisor, and create virtual copies of previously bare-metal servers that teams could access. Virtualization improved our efficiency by enabling us to share physical and virtual servers. The industry became more efficient with resource utilization, and applications became more resilient due to the ease of reproducibly creating new servers. These servers could then be used as idle machines waiting for tasks to be scheduled via APIs. 
+
+The pipeline runner pattern uses a virtual machine to schedule and run individual pipeline tasks. Many pipeline tools, such as GitLab or Drone, can use a VM for job execution. 
+
+The VM runner pattern had some issues:
+
+Environment Inconsistency: It is hard to maintain consistent runtime environments, leading to dependency issues.
+Resource Overhead: VMs introduce significant overhead with complete operating system instances, underutilizing resources.
+Scalability Challenges: Slow and cumbersome process to manually provision and configure additional VMs for horizontal scaling.
+Limited Resiliency: VMs can be less resilient to failures, as issues in one VM can require more time for recovery, and high availability configurations can be complex and resource-intensive.
+Packages Pulled During Runtime: Even with tools like Packer, the runner pattern pulls packages and code during runtime, creating additional complexity when wanting to ensure idempotent runs. 
+Tools like Packer helped solve many of these problems. Still, with the rise of containers, the industry sought to mitigate these issues by using containers as the foundation for task orchestration. 
+Containerized Components and Task Orchestration
+Containers and workflow orchestrators, such as Kubeflow Pipelines, take task automation further than their VM predecessor by using containers to virtualize processes (not entire VMs) and deploy them across a distributed kernel (i.e., a cluster of nodes with identical kernels). Each container can be built with all the dependencies included as components within the pipeline, removing the need to pull packages during runtime. Each container is a consolidated task that can be deployed on any node. If one step needs updating, we can update the specific task’s container, whether it’s a third-party library or developer code update, and improve our reproducibility and modularity without updating the entire pipeline.  
+
+By employing marshaling techniques, we can enhance our system's resiliency to failures and support a serverless-like pattern. These techniques allow processes to run seamlessly on any instance across our cluster while still reliably handling input and output artifacts.
+
+Leveraging marshaling techniques for inter-process communication (IPC) marks a significant evolution from traditional VM-based task scheduling methods. Unlike VM environments, where IPC might rely heavily on message queues, sockets, or shared memory, containerized orchestration frameworks often employ marshaling to serialize and deserialize data objects for communication between containers. This method standardizes data exchange across diverse container environments and enhances pipeline resiliency. Should a containerized task need rescheduling, marshaling allows for a more seamless state transfer, enabling tasks to pause and resume with minimal disruption. This ease of scheduling contrasts with VM-based systems, where restarting or migrating tasks might require more complex state management or lead to more extended downtimes. 
+
+Containerized components also improve the scalability of our pipelines by rapidly provisioning and de-provisioning containers based on real-time demand without manual intervention. Unlike VM-based systems, which can be slower to scale due to the overhead of providing complete virtual machines, containers are lightweight and can be started or stopped almost instantly. This agility allows for a highly responsive scaling mechanism, ensuring optimal resource utilization and performance, even under fluctuating workloads.
+
+The ability to intelligently schedule our tasks on the optimal node for the process improves job performance because we can scale resources based on demand and ensure our scheduled job has the necessary resources in the first place. We no longer need to attach a GPU to our VM in case one task needs a GPU. We can schedule GPU tasks on GPU nodes and prevent non-GPU jobs from using our GPU node's resources. We can also ensure our tasks aren’t noisy neighbors or OOM killed using configurations like Kubernetes Limits. These configurations significantly improve our task success rates by defining boundaries and requirements for the tasks themselves, preventing resource-related errors. 
+ 
+In summary, containers improve pipelining through the following:
+Efficient Resource Use: Containers share the host's kernel, significantly reducing overhead and improving resource utilization by running multiple containers on a single host.
+Enhanced Scalability: Containers enable quick, easy horizontal scaling, with orchestration tools like Kubernetes automating the scaling and management process.
+Enhanced Portability: Containers run consistently across any environment that supports containerization, easing compatibility issues.
+Improved Resiliency: Containers can be more resilient to failures. Orchestration tools quickly replace failed containers, ensuring high availability and minimizing downtime. This approach reduces the risk of losing work and enables the seamless continuation of processes, safeguarding against data loss and workflow interruptions.
+Modularity:  Each task is consolidated within the context of a container. If a task within the pipeline needs updating, we can update the underlying container. We can also schedule each task within a pipeline independently and use marshaling techniques to retrieve and pass data.
+Reproducibility: packages and code are not pulled during runtime but packaged within the container designed to support a specific pipeline task. 
+Containers as Runners
+The efficiency of containers has led to tools like Gitlab and Drone adopting the container runner pattern. Instead of an idle VM waiting for jobs, a container runner can be provisioned to run a job. 
+Let’s look at the differences between the container runner pattern and the prebuilt container component pattern: 
+Prebuilt Container
+Creating containers involves defining a container image through a Dockerfile or similar configuration file, specifying the operating system, dependencies, and application code to be included. This image serves as a blueprint for the container, ensuring it contains all necessary components to run the application consistently across any environment. All dependencies are packaged with the application during the build phase, leading to a portable and self-sufficient unit. 
+Container Running and Runners
+Unlike the static nature of the built container, runners can dynamically pull packages and dependencies on the fly based on the execution context or the requirements of a specific job. This approach allows for more flexibility during the development and testing phases, enabling developers to quickly test changes without rebuilding the entire container for each modification. However, this dynamic pulling can introduce variability, so the final deployment typically relies on fixed container images to ensure consistency and reliability.
+Comparison and Implications
+Efficiency and Speed: 
+While prebuilt containers focus on creating a consistent and immutable artifact, runners optimize for speed and flexibility, adapting to changes rapidly. The trade-off here is between the predictability and reliability of containerized components versus the adaptability and immediacy of runners pulling packages as needed.
+Use Cases: 
+Containerized components are ideal for production environments where consistency and reliability are paramount. Conversely, runners are better suited for development and CI/CD processes where they can enhance efficiency and reduce the time required for testing and integration.
+
+Summary
+Task scheduling is a crucial workflow for CI/CD and ML Training pipelines. With task scheduling, we can orchestrate the execution of various tasks within pipelines based on predefined criteria such as dependencies, priorities, and timing. One common way to handle task orchestration is through a virtual machine waiting to receive requests or provisioned to run tasks on demand. Though the virtual machine strategy worked well before the wide adoption of containers, it has since been improved upon through the containerized runner pattern. The containerized runner helps us run jobs in a more modular and lightweight way without needing to run an entire VM. The container runner pattern suits CI/CD pipelines that value incremental changes at a high velocity. Containerized pipeline components are more suited for machine learning training and validation tasks because ML teams prioritize flexibility, scalability, and reproducibility in their workflows due to longer development cycles fueled by the complexity of managing data and applications in parallel. 
+Kubeflow Pipelines
+Introduction
+Now that we understand the value of scheduling tasks as part of a pipeline and the potency of using containers, it's time to discuss Kubeflow Pipelines. In this section, we will introduce the concept of Kubeflow Pipelines, the types of Kubeflow Pipeline Components, and each component type’s value to MLOps teams. 
+Kubelfow Pipelines: Reproducible Batch Jobs
+One way to think about Kubeflow Pipelines is to consider them as a batch job. A batch job is a computer program that runs automatically without human intervention, typically during off-peak hours. It enters a queue upon submission and is processed based on the system's availability, and sometimes by order or priority. A compiled pipeline is a series of virtualized processes in containers that run in a specific order every time they are launched. 
+
+Kubeflow pipelines are batch jobs orchestrated by the Argo Workflows engine. Each batch job is a Kubeflow Pipeline Component backed by a container. Kubeflow Pipeline Components are scripts or Python functions that run within a pod. Each component is run in a specific order, leveraging input and output artifacts. Kubeflow components are meant to be modular in that a component is not specific to a pipeline. Suppose you have a component that does the work required by many types of pipelines, such as data preprocessing, model training, or evaluation. In that case, this modularity allows for the reuse of components across different machine learning workflows.  
+
+
+There are three main Kubeflow Components types:
+Lightweight Python Components for quick, self-contained remote Python functions
+Containerized Python Components for more robust Python functions that can leverage symbols defined outside the function, i.e., imports or code in adjacent Python modules. 
+Container Components for maximum flexibility, making it possible to author components that execute shell scripts using other languages and binaries for pipeline steps. 
+
+Let’s go ahead and explore these component types a bit further. 
+Lightweight Python Components   
+One of the issues data science teams have with containerized pipeline tasks is the build process that containers are subject to. Containers are great for improving reproducibility and replicability, but building containers and pushing them to registries is time-consuming. A user must define a Dockerfile or Dockerfile equivalent with all the build steps, build the container with a tool such as Buildah or Kaniko, and then push the container image to a registry such as Dockerhub or Harbor. Beyond needing specialized tools, the code the data scientist or MLE wishes to execute must be appropriately refactored to run within a container. Refactoring code to run in a container means a user must ensure the image, commands, and args values are correctly configured as part of the container build process, and the code within the container can accept those arguments. The most basic solution Kubeflow provides to this problem is the Lightweight Python Component. 
+
+Lightweight Python Components are Kubeflow Pipeline components that data scientists can 
+promptly iterate on without building containers. Lightweight Python components are not production-ready code but tools for quickly experimenting with pipelines. Lightweight Python Components are self-contained and can be executed as a remote function. It is important to note that symbols, such as imports or constants, must be defined within the Python function's body. Let’s take a look at two examples: one valid and one invalid. 
+Valid Lightweight Function
+The function below can be executed without issues because it contains all of its dependencies.
+
+@dsl.component
+def calculate_area(radius: float) -> float:
+    import math
+    area = math.pi * radius ** 2
+    return area
+
+
+
+
+Invalid Lightweight Function
+When executed, the function below would face issues because it depends on external imports and constants.
+
+import math  # External import
+radius = 5  # External constant
+@dsl.component
+def calculate_area(radius: float) -> float:
+    area = math.pi * radius ** 2
+    return area
+Lightweight Python Component Considerations
+The Lightweight Python methodology for creating components may seem like a strong candidate as your organization's default way to build pipelines, but Lightweight Components have drawbacks.
+
+Some of these potential issues are as follows: 
+
+Code Redundancy and Maintenance Overhead: Leads to code duplication and increases the effort required for updates, as changes to libraries or constants need to be replicated across multiple functions.
+Function Bloat and Reduced Readability: Functions become more extensive and less readable due to the inclusion of imports and constants, complicating code management.
+Efficiency and Performance Issues: Repeatedly importing modules and redefining constants within functions can cause inefficiencies, particularly with frequent function invocations.
+Versioning Issues: Code is injected during runtime and not hermetically sealed within a container. A user can check their component code in a git repo, but reproducing an exact execution can be tedious and error-prone.
+Must be Python: Code must be self-contained Python code. If a team wishes to use other languages they must use generic container components instead. 
+
+
+Lightweight components are beneficial for early experimentation with pipelines and quick function testing. When a team is ready for a more robust Python-centric solution, we recommend migrating lightweight components to Containerized Python Components.
+Containerized Python Components   
+A single Python function without external imports or constants may be helpful. Still, due to the essential complexity of business problems Python needs to solve, we know that the Python code becomes equally complex, and a single function will hit its limitations. The Python code may need to support functionality such as classes or utility functions from other scripts.  
+
+One issue we omitted from the previous section is importing packages during runtime. Due to Light Weight Python Components making no assumptions on the built-in functionality of the container image they are running on, packages defined by packages_to_install will be installed during runtime by the KFP SDK. Installing packages during runtime is similar to running pip install -r requirements.txt every time your function launches. Pulling packages during runtime is not only a reproducibility and replicability issue due to the lack of control over the exact packages being pulled but also a security issue due to the lack of package curation. Pulling packages during runtime is also a significant performance problem due to the required time to pull and install our packages during each function call. Users can help mitigate these issues by declaring a different image to use as a base for their lightweight component. However, at that point, they may want to pivot towards Containerized Python Components for a more complete solution.  
+
+Let’s expand upon our Lightweight example but with Containerized Python Components. 
+Material Costs Example
+In this example, we will use a calculate_area function as a utility function that supports a calculate_material_cost function that will return our costs.  
+The directory structure is as follows: 
+
+src/
+├── my_component.py
+└── math_utils.py
+
+Now, let's take a look at each of these files. 
+
+src/math_utils.py
+
+def calculate_area(radius: float) -> float:
+    """Calculates the area of a circle given its radius."""
+    import math
+    return math.pi * radius ** 2
+
+src/my_component.py
+# Import KFP DSL and our utility function
+from kfp import dsl
+from math_utils import calculate_area
+
+# Declare our base_image that our code will be packaged on top of and our target_image,
+# which will be what we name our new container image when pushed to our registry
+@dsl.component(
+    base_image='python:3.7',
+    target_image='harbor.mydomain.com/my-project/my-component:v1'
+)
+def calculate_material_cost(radius: float, cost_per_square_unit: float) -> float:
+    """
+    Calculates the cost of materials needed to cover a circle's area.
+    """
+    area = calculate_area(radius)
+    total_cost = area * cost_per_square_unit
+    print(f"The total cost to cover the area of a circle with radius {radius} is: ${total_cost:.2f}")
+    return total_cost
+
+
+
+Once we are ready to package our Python, we run: 
+kfp component build src/ --component-filepattern my_component.py --no-push-image 
+using the KFP CLI.
+Containerized Python Considerations
+Containerized Python Components can improve our Python task, making them production-ready, but they still have complexities to consider. Complexities include: 
+The KFP SDK must be installed on the host machine responsible for building and pushing the component images. 
+The KFP CLI requires the Docker Python package by default.
+When building a container, the KFP SDK creates files within the specified directory. The user may need help understanding those files and how they map to the component. 
+Users must have access to an external registry. 
+Users must declare the new image on their component when they update it.
+Component image updates benefit from being tagged for version control using strategies such as semantic versioning. With automated build pipelines, duplicate tags could be pushed, or semantic versioning strategies could be better executed.
+The component must be Python-based. 
+
+Containerized Python Component Conclusion
+
+In summary, Containerized Python Components are the next evolution of Lightweight Python components. Containerized Python Components enable teams to build more robust functions that no longer need to be self-contained. These components improve reproducibility by packaging our code in containers without requiring teams to be containerization experts. The functinoality provided by the Kubeflow SDK's ability to handle the complexities of containerization requires its own set of supporting tools and services that teams must manage, such as the Docker Python package and a container registry. Should users wish to build complex components without Python, they must opt into building generic container components, which we will discuss in detail in the next section. 
+Container Components
+Container components are the most flexible and advanced task option for ML teams using Kubeflow Pipelines. When building one of the Python components, the image, command, and args container arguments are handled for the users. Kubeflow Pipeline Steps are remote jobs that execute scripts. These container arguments ensure the remote job script receives the proper arguments and is launched on container startup. By removing the need for users to manually configure these arguments when building Python containers, the KFP SDK simplifies the creation of containerized Python steps.
+
+Container Components allow us to set the image, command, and args ourselves and run any containerized code that executes scripts. With Container Components, we are no longer required to use Python.  
+Container Component Example 
+Below is an example container component written in R. The component requires two parameters (total_cost and state_tax) and outputs a string. The third value, quote, is passed automatically during the pipeline. The dsl.OutputPath(str)value relates to how container steps handle outputs.
+
+@dsl.container_component
+def generate_quote(total_cost: float, state_tax: float, quote: dsl.OutputPath(str)):
+    """output a quote"""
+    return dsl.ContainerSpec(
+        image='chasechristensen/generate_quote:v1',
+        command=[
+            "Rscript","/usr/local/bin/generate_quote.r"
+        ],
+    args=[total_cost,state_tax,quote])
+
+
+Here is the associated Dockerfile: 
+
+# Use an official R base image
+FROM r-base
+
+# Install any necessary dependencies (if any)
+# RUN apt-get update && apt-get install -y ...
+
+# Copy the R script into the Docker image
+COPY generate_quote.R /usr/local/bin/generate_quote.R
+
+# Make the R script executable
+RUN chmod +x /usr/local/bin/generate_quote.R
+
+# Set the R script as the entrypoint
+ENTRYPOINT ["/usr/local/bin/generate_quote.R"]
+
+
+Here is the executed script: 
+
+#!/usr/bin/env Rscript
+
+# Accept arguments from the command line
+args <- commandArgs(trailingOnly = TRUE)
+total_cost <- as.numeric(args[1])
+state_tax_rate <- as.numeric(args[2])
+output_path <- args[3] # The third argument is the output file path
+
+# Calculate the final price
+final_price <- total_cost * (1 + state_tax_rate)
+
+# Scale the materials based on the total cost
+scale_factor <- total_cost / 5000 # Adjusted for more realistic scaling
+magical_unicorns <- max(1, as.integer(15 * scale_factor))
+dreamy_carriages <- max(1, as.integer(5 * scale_factor))
+whimsical_music_boxes <- max(1, as.integer(1 * scale_factor))
+rainbow_paint_gallons <- max(20, as.integer(20 * scale_factor))
+stardust_glitter_pounds <- max(50, as.integer(50 * scale_factor))
+
+# Construct the quote string
+quote_string <- sprintf("Carousel Construction Quote:\nMagical Unicorns: %d\nDreamy Carriages: %d\nWhimsical Music Box: %d\nRainbow Paint (gallons): %d\nStardust Glitter (pounds): %d\nTotal Cost (with tax): $%.2f\n", magical_unicorns, dreamy_carriages, whimsical_music_boxes, rainbow_paint_gallons, stardust_glitter_pounds, final_price)
+
+# Print the quote to the console
+cat(quote_string)
+
+# Ensure the directory exists before writing the file
+dir_path <- dirname(output_path)
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, recursive = TRUE, showWarnings = FALSE)
+}
+
+# Write the quote string to the specified output file
+writeLines(quote_string, output_path)
+Container Component Considerations 
+Container components are the most complex of the components. Let’s note some essential considerations when designing Container Components:
+
+Container components require a container-build tool.
+Users must create and manage Dockerfiles or Open Container Initiative (OCI ) format files.
+Teams benefit from source-controlling Dockerfiles and the internal logic scripts.
+Users must ensure the command, image, and args are handled adequately by the Dockerfile and the script running within the container. 
+The Container image must be pushed to a registry. 
+Teams benefit from properly versioning and tagging their container images because the component must declare them. With proper versioning and tagging logic, it can be easier to replicate runs.  
+
+Container components are flexible pipeline steps that do not require Python but are more complex than their Python counterparts. Teams that want maximum control over a specific step should consider using generic container components. Still, they should also consider developing robust engineering practices around these components and only expect some members of the MLOps team to be container SMEs. Data scientists tend to understand these workflows but see them as additional complexity. 
+Submitting a Pipeline (1)
+Now that we understand how to build components, it's time to orchestrate these tasks together in a pipeline. We will use the KFP client to submit the pipeline directly, but you could also submit a compiled pipeline via the Pipelines page in the Kubeflow Central Dashboard. 
+
+We need to perform several steps once we are ready to submit a pipeline. 
+Step zero is our initialization step. From a Kubeflow notebook, we must ensure the proper packages are imported and can connect to our KFP service.  
+
+import kfp
+from kfp import dsl
+from kfp import compiler
+from kfp.client import Client
+
+
+client = kfp.Client() #defaults to the kubeflow namespaced KFP service
+
+print(client.list_experiments())
+
+
+
+The first pipeline-oriented step is to define our pipeline. Using our Container Step example, the pipeline declaration looks like this: 
+
+@dsl.pipeline
+def quote_pipeline(x: float, y: float) -> str: 
+    task1 = generate_quote(total_cost=x, state_tax=y)
+    return task1.output
+
+The pipeline definition above takes in two floats (x and y) and returns a string. We then declare a task and pass it the value of our Containerized Step function generate_quote, which takes in two values: total_cost and state_tax. We assign those values based on the pipeline's input values (x and y).  We then set the task1 output as our return value. We will show a more robust example pipeline in our video.
+
+Once we have our pipeline declared, we need to compile our pipeline using:
+
+compiler.Compiler().compile(quote_pipeline, 'pipeline.yml')  
+
+Then, submit our compiled pipeline using:
+
+run = client.create_run_from_pipeline_package(
+    'pipeline.yml',
+    arguments={
+        'x': 500.0,
+        'y':0.35
+    },
+)
+
+When submitting a pipeline using the KFP SDK, you must have the proper authorization to run commands from your notebook.  
+
+Notice we used the pipeline.yml manifest we generated from the compile step and then provided the required “x” and “y” values for our generate_quote step.  
+
+Below is an image of our execution. Notice the state_tax (our pipeline x value ) and total_cost (our pipeline y value)  values we set as input and output string parameters. 
+ 
+
+generate_quote Step
+
+ALT= “A screenshot of the Kubeflow UI showing the interface for inputting the generate_quote Step"
+
+
+Continued on the next page.
+Submitting a Pipeline (2)
+Now that we have a general idea of Kubeflow Pipeline Components and how they function together, let’s show an example pipeline that uses all three component types and controls the order in which they run. 
+
+Here is the pipeline declaration:
+
+@dsl.pipeline
+def unicorn_carousel_construction_quote(carou_radius: float, mat_costs: float,st: str) -> str:
+    task1 = calculate_material_cost(radius=carou_radius, cost_per_square_unit=mat_costs)
+    task2 = get_state_tax_rate(state=st)             
+    task3= generate_quote(total_cost=task1.output,state_tax=task2.output)
+    return task3.output
+
+
+Notice that task3 takes input from task1 (total_cost=task1.output) and task2 (state_tax=task2.output). Passing the output from previous tasks like this ensures that task3 doesn’t run before task1 and task2.  The video at the end of the chapter walks through this workflow in depth. Below is an image of the DAG from this declared pipeline to demonstrate the pipeline flow. Notice that  get_state_tax_rate (also known as task1) and  get_state_tax_rate (also known as task2) run in parallel but pass their outputs to generate_quote (also known as task3).
+
+
+
+
+Multiple Component Pipeline DAG
+
+ALT= “Screenshot of the Kubeflow visual graph showing demonstrated pipelines.” 
+
+
+Declaring and compiling pipelines is valuable but still can be complex for data scientists. Tools like Kale were developed to help simplify the pipeline authoring process. Still, Kubeflow Pipelines help the team orchestrate packaged components in a specified manner, all within the context of Kubeflow.  
+Kubeflow Pipeline Video
+In this video, we will use lightweight Python, containerized Python, and generic container (using R) components to build a pipeline that generates a quote for a fictional unicorn carousel. The user will pass in the state where the carousel will be deployed and the desired radius. The Python components will calculate the total cost and return the state tax rate. The R component will then use the outputs from the Python components to generate a quote, including a bill of materials. 
+Conclusion
+Pipelines are essential tools for machine learning teams because they offload error-prone human interaction with systems and ensure we can launch tasks in a specified order. One typical pattern for pipelining is the runner pattern, where a single runner runs jobs. This pattern was executed using VMs but ran into several inefficiencies, such as environmental inconsistency and resource overhead. Containers help alleviate some of these problems by packaging applications with their dependencies, ensuring consistency across all environments, and sharing the host's kernel to improve resource utilization. Kubeflow Pipelines is the workflow orchestrating solution with Kubeflow. Kubeflow Pipelines consist of a series of components directed together to form a pipeline. 
+
+These components can be 
+Lightweight Python Components for quick, self-contained remote Python functions
+Containerized Python Components for more robust Python functions that leverage symbols defined outside the function
+Container Components for maximum flexibility, making it possible to author components that execute scripts using other languages and binaries for pipeline steps 
+
+These component types can be mixed and matched within a pipeline to give ML teams maximum flexibility regarding task orchestration. 
+
+

@@ -1,0 +1,42 @@
+apiVersion: serving.kserve.io/v1alpha1
+kind: ServingRuntime
+metadata:
+  name: llama-2-7b-chat
+spec:
+  annotations:
+    prometheus.kserve.io/path: /metrics
+    prometheus.kserve.io/port: "8000"
+    serving.kserve.io/enable-metric-aggregation: "true"
+    serving.kserve.io/enable-prometheus-scraping: "true"
+  containers:
+  - env:
+    - name: NIM_CACHE_PATH
+      value: /opt/nim/.cache
+    - name: NGC_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: nvidia-nim-secrets
+          key: NGC_API_KEY
+    image: nvcr.io/nim/meta/llama-2-7b-chat:1.0.3
+    name: kserve-container
+    ports:
+    - containerPort: 8000
+      protocol: TCP
+    volumeMounts:
+    - mountPath: /dev/shm
+      name: dshm
+  imagePullSecrets:
+  - name: ngc-secret
+  protocolVersions:
+  - v2
+  - grpc-v2
+  supportedModelFormats:
+  - autoSelect: true
+    name: llama-2-7b-chat
+    priority: 1
+    version: "1.0.3"
+  volumes:
+  - emptyDir:
+      medium: Memory
+      sizeLimit: 16Gi
+    name: dshm

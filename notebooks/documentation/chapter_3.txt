@@ -1,0 +1,136 @@
+Chapter 3. MLOps and Machine Learning Toolkits
+Chapter Introduction
+Chapter Overview
+Anyone who has spent enough time in tech has heard all sorts of terms with “Ops” as a suffix. Some examples include DevOps, MLOps, and FinOps. Everyone seems to have an “Ops” terminology associated with their field. Understanding which category of “Ops” benefits us and our careers can be very difficult. This section seeks to demystify two standard terms within the ML/AI industry: DevOps and MLOps. We will discuss the tooling that helps support DevOps and MLOps within machine learning toolkits and use the concept of “MLOps maturity” to help you determine which tools,  ideas, or deployment patterns you may need as part of an ML/AI team.
+Learning Objectives
+
+By the end of the chapter, students should be able to:
+
+Compare and contrast MLOps and DevOps 
+Identify the core value propositions of machine learning toolkits
+Describe the importance of unified toolkits and platforms for machine learning application development
+Define the MLOps maturity levels
+Are MLOps and DevOps the Same?
+Introduction
+Development Operations(DevOps) and Machine Learning Operations (MLOps) are not identical practices, yet MLOps was inspired by DevOps philosophies. DevOps began to help developers and infrastructure teams align themselves towards a common goal and improve production stability. MLOps came from the need for machine learning engineering resources to be familiar with the model lifecycle and the automation required for stable model deployment. Many DevOps engineers believe they are obsolete in this new ML world, but  DevOps teams are critical to an MLOp team. This section will explore both DevOps and MLOps further.
+DevOps
+Development and operations teams do not always live in perfect harmony but can be aligned towards a unifying goal. DevOps is the drive for innovation and feature releases while still valuing reliability and reproducibility. Let us explore the professionals in these teams.
+
+Developers
+Developers want to program so their applications can run in each other's environments and be reliably deployed to production. When developers pull a branch or build a container, they do not want to make it on a code base different from other developers or specific to one environment. Imagine they had to ship their laptops to other developers to collaborate on code. That would be very inefficient. Developers are ultimately paid for their ability to solve business problems with code. They need to be able to deliver this code to customers to solve business challenges. Moreover, developers must review and update their applications continually. A developer's desire to ship more features to their customers traditionally created tension with operations teams, who are stereotyped as resistant to change.
+Operations
+Operations teams face a different set of challenges. Operations teams must orchestrate infrastructure to ensure business-critical applications can handle production demands. Operations teams traditionally “hold the pager.” Holding the pager means that teams must be available during on-call times if something causes an application to error. Did someone change a network policy and break a load balancer? Is a cluster at max capacity? These are only some of the many issues operations teams need to manage. 
+
+Since operations teams are often responsible for late-night escalations, they must write application code to launch new features. Instead, they are building automation to resolve or prevent application failures that lead to production outages. Operations teams value stability and reproducibility. Containerization and abstraction layers, like Kubernetes, give operations teams tools that ensure services run the same way every time they are deployed. The industry term for providing services run the same way every time is idempotency.
+
+Once operations teams have mastered running an application, they do not want to needlessly deploy additional code that could change their understanding of its requirements. This reluctance to change can cause tension with the development team seeking to launch new features. Greg Brockman (co-founder and President of OpenAI) relays the operation team sentiment nicely by saying, “Code is a liability, not an asset. So the goal of a software engineer is delivering the maximum amount of desired functionality at the cost of the least amount of code complexity, even as desired functionality evolves over time.” (Greg Brockman, 2022, X)
+Achieving Harmony
+The harmony between developers and operations is achieved when both teams utilize standard tools and best practices that align with their team’s objectives. An engineering culture focused on shared mission and collaboration helps us achieve faster deployment cycles, improved reliability, and better resource utilization—all while maintaining the agility needed to respond to our business needs. The DevOps approach, emphasizing collaboration, automation, and integration, ensures that software can be developed, deployed, and managed efficiently. The cultural shift of shared vision and unified missions bridges the gap between development and operations. Building this type of collaborative culture accelerates the delivery of value to customers, enhances the scalability and resilience of the infrastructure, and creates optimal outcomes for both teams.
+Continuous Integration and Continuous Delivery (CI/CD)
+Continuous integration and continuous delivery, or CI/CD, are vital principles for DevOps teams and help support a harmonious relationship. Continuous integration emphasizes generating and deploying code efficiently by avoiding repetitive errors through rigorous testing. Continuous delivery swiftly addresses bug outages and enhances user satisfaction by deploying updates in manageable increments to facilitate easy adjustments in case of production issues. Production complications may encompass both logical errors and misalignments with business strategy. Despite our best efforts to anticipate every conceivable challenge, numerous factors can influence production outcomes, including user browsers, internet infrastructure, and the specific context of the problem being addressed. We may develop what we believe to be a scalable and practical user experience only to find that it needs to be updated or meet expectations.
+Regarding response times, we need to be able to handle industry-wide issues like the log4j incident. Acknowledging that it is impractical and costly to foresee and mitigate every potential issue, prioritizing rapid issue resolution and efficient code deployment allows us to adapt to real-world feedback and identify the next challenge to tackle. The concept of "finished" or "perfectly secure" code is a myth; instead, our focus is on continuous improvement and responsiveness to emerging needs and threats.
+
+For a humorous take on writing secure code, check out this tutorial, and for a great resource on continuous integration and delivery, check out minimumcd.org. 
+
+Machine Learning Operations (MLOps)
+Same Problems, Bigger Teams 
+MLOps, or Machine Learning Operations, is a set of practices that unify machine learning development (ML) and machine learning system operations (Ops). It involves multiple personas, each playing a crucial role in the model development lifecycle, ensuring that machine learning models are developed, deployed, and monitored while being maintained efficiently and effectively. Let us explore these personas further.
+Data Scientists
+Data Scientists are the architects of machine learning models. They experiment with different algorithms and techniques to create models that can accurately predict, classify, or generate insights from data. For them, MLOps provides a framework for rapidly prototyping, testing, and iterating their models in a controlled yet flexible environment. Data scientists benefit from MLOps practices that streamline the transition from experimentation to production, ensuring their models can be scaled and deployed without losing their predictive power. Data scientists need their models to create predictions from and capture actual world data. A great example is capturing adversarial data or data trying to confuse a model so the model intentionally makes harmful predictions. The data scientist can take the harmful data and retrain the model with it, thus improving its capability to handle attacks in the future.
+Machine Learning Engineers (MLEs)
+Machine Learning Engineers bridge the gap between the prototypes of data scientists and production-ready systems. They specialize in optimizing models, coding them into production-grade software, and integrating them with existing IT infrastructure. MLOps facilitate their work by providing tools and processes for version control, CI/CD of models, and monitoring. This bridge ensures that models are deployable but also maintainable and scalable in a production environment. Many MLEs have to deal with what is often called the wall of confusion. The wall of confusion is a term that describes the handoff from one team to another. It can feel like a team is just throwing something over the wall without consideration of the person on the other side. 
+
+
+The Wall of Confusion
+Alt: Data Scientist throwing a folder of binary code over the wall to a Machine Learning Engineer who is confused. The ML Engineer throws the folder over the wall to Operations, who is also confused.”
+
+One example is handing Jupyter notebooks to an engineer and asking them to make the notebook production-ready. The notebook is not an application that can be easily refactored and moved to production. Critical vulnerabilities, dependency pinning, building definitions, and more introduce complexity for managing MLEs. Translating data science work without a unified way to share it can dramatically reduce model stability and time to market. 
+DevOps Engineers 
+DevOps engineers extend their expertise to the machine learning domain, focusing on infrastructure, automation, and monitoring. In the context of MLOps, they adapt traditional DevOps practices to the specific needs of machine learning workflows, such as managing the lifecycle of data and models, and automating model training/deployment pipelines. They are critical in creating a seamless operational environment where machine learning models can run reliably and at scale. DevOps engineers are, in many ways, the platform development team and often support the platform tools. DevOps enhances MLOps because the tools underneath the ML excitement are applications subject to the DevOps lifecycle. All the toil of traditional application development and support still exists in machine learning deployments. 
+Data Engineers
+Data engineers prepare the groundwork for data scientists and machine learning engineers by ensuring data is accessible, clean, and structured. In MLOps, they build and manage data pipelines that feed into the machine learning models, handling tasks such as data collection, storage, and preprocessing. Their work is crucial for maintaining the quality of data that models rely on—directly impacting the accuracy and performance of machine learning systems. 
+Let’s consider an analogy using the human body to explain the relationship between these entities. The model is like the brain, it can process information based on data and make decisions. Imagine just being a brain in a jar. You could learn a lot but not do much! The brain needs muscles to get anything accomplished. The application fills this role. It represents the muscle that controls the body, taking action based on the brain's inputs. Data is the blood powering the entire system. Data engineers are the kidneys, filtering the data for our MLOps team. They ensure that data is ready to be consumed without potentially harmful defects. Much like the human body that must operate according to a plan to stay healthy, automation must follow a set of rules. It has no room for nuance.
+
+
+Analogy of MLOps Team
+Alt: An image of the analogy described in the text. The Model is the brain, The Application is the muscle. The data is the blood being circulated. The Data Engineers are the kidneys, filtering the data to make sure nothing harmful goes through.
+
+Business Stakeholders and Product Managers 
+Business Stakeholders and Product Managers define the goals and requirements for machine learning projects, focusing on how these projects can solve business problems or enhance products. MLOps practices help them stay informed about the progress of model development, understand the capabilities and limitations of models in production, and make data-driven decisions to guide the project's direction. The business leaders and the product managers keep tabs on the project to ensure profitability. As data professionals, we want to communicate our data science projects' investment requirements and outcomes. We might understand the value of tools or provide every integration detail, but these personas need measurable outcomes and the ability to track them. Sharing how machine learning solves a business problem is a critical collaboration point between the engineering and business teams. 
+Better Together with MLOps 
+The harmony between teams practicing MLOps is achieved when these diverse roles collaborate while leveraging automated workflows, standardized tools, and best practices to streamline the entire lifecycle of machine learning models. This process includes the following:
+Collaborative Development: Facilitating seamless collaboration between data scientists, machine learning engineers, and data engineers to build and refine models. 
+Continuous Integration and Deployment: Automating machine learning models' testing, deployment, and updating in production environments.
+Monitoring and Maintenance: To detect and address data drift or model decay, monitor model performance.
+Governance and Compliance: Ensuring that models comply with regulatory requirements and ethical guidelines.
+By aligning the objectives and workflows of all these personas, MLOps enables organizations to deploy machine learning models more rapidly, efficiently, and reliably, turning the promise of AI into practical solutions that drive real business value.
+
+Better Together with MLOps
+Alt Text:Graphic showing eight personas and the thoughts that they may have on a MLOps team. Business Stakeholder: How much value does the model bring? Product Manager: What resources do we need to support this model? Data Engineer: How do I extract and deliver compute-ready data? Data Scientist: How can I trust this data to train a model? ML Engineer: How does my application use this model? Operations: How do we ensure our model is performing and behaving based on our goals? Data Science Manager: How do we convey our impact and needs to stakeholders? End User: How  does this ML application help me?
+
+Who Holds the Pager?
+Navigating the "who holds the pager?" question within the MLOps landscape brings us face-to-face with a nuanced challenge. When a model fails, thanks to anything from low-quality data to laggy responses, the scramble to pinpoint responsibility begins. Managing the concern is not meant to blame anyone or determine who gets their sleep disturbed; it is about crafting a team dynamic where roles and escalation paths are well-defined. 
+
+Imagine the scene: a model fails very early in the morning. Do we ping the data scientist, or does an MLE remove the model from production? It is a quandary since retooling a model is not precisely a middle-of-the-night task. The natural barrier is time. Science is not instant. Models take time to learn and adapt, demanding robust automation and a clear head for making those critical decisions. Those decisions? They are all about aligning with what is best for the customer and the business. Once the post-mortem is written, the conversation shifts towards a more integrated approach, spotlighting the need for shared understanding and action across teams. The culture we create is not just about the tools in our hands but the people standing beside us and our readiness to tackle the next challenge together.
+ 
+Machine Learning Toolkits 
+What is a Machine Learning Toolkit (MLT)?
+Hopefully, we can all feel the momentum as we continue to define Kubeflow’s role in machine learning and artificial intelligence. Kubeflow is defined as a machine learning toolkit. We will go into the design principles behind Kubeflow later, but for now, let us define what a machine learning toolkit is and how it benefits the MLOps flow. A machine learning toolkit is the common ground for the diverse personas involved in MLOps. These include data scientists, machine learning engineers, DevOps engineers, data engineers, and business stakeholders. It streamlines their collaboration by providing a shared set of tools and libraries that automate critical aspects of the machine-learning workflow. MLTs like Kubeflow offer efficient model development and evaluation resources for data scientists and machine learning engineers. DevOps and data engineers benefit from features that simplify the deployment, management, and monitoring of models in production. Meanwhile, business stakeholders can leverage these toolkits to ensure the models align with business goals and deliver tangible value. This unified approach enhances the productivity of each role and ensures the seamless integration of machine learning models into operational processes, embodying the collaborative spirit of MLOps.
+Comparing Machine Learning Toolkits 
+With so many toolkits, comparing and contrasting them can make it hard to determine what will benefit us the most! Kubeflow is part of the CNCF, but Flyte is another tool the Linux Foundation supports. Both are good options, but which one will work for our team? What are the standard services, tools, and components found across these machine learning toolkits? Each service should play a unique role in the ecosystem, working to streamline the development, deployment, and management of machine learning models while embodying the principles of MLOps.
+
+Machine Learning Toolkit Components  
+Workflow Orchestration
+The quintessential characteristic of machine learning toolkits is the powerful orchestration capabilities for machine learning workflows. These capabilities allow users to define, schedule, and monitor complex data and machine learning pipelines, ensuring that various steps in the model lifecycle are controlled and reproducible. 
+Containerization
+Containerization is a crucial aspect of machine learning platforms. They leverage containers to package code, dependencies, and environments, ensuring consistency across development, testing, and production. This approach facilitates the portability and scalability of machine learning models. Even serverless tools like Google’s Cloud Run use containers. 
+Scalable and Distributed Processing
+Toolkits must support distributed processing, allowing machine learning tasks to be scaled across multiple nodes or clusters. This scaling is particularly useful for handling large datasets and computationally intensive model training. Projects like Ray seek to solve this issue in a native Python environment. 
+Integration with Cloud and Kubernetes
+Most platforms integrate seamlessly with cloud services and Kubernetes, offering robustness in deploying and managing machine learning workflows. This integration allows for efficient utilization of resources and scalability.  You may have heard of Sagemaker or Vertex. These toolkits suggest that achieving higher levels of determinism and stability in platforms is best accomplished through comprehensive integration with the particular cloud environment in which they specialize. They seek to simplify a considerable portion of the infrastructure, effectively abstracting it away and specializing in a particular cloud, resulting in a closely integrated cloud solution. Tools like Flyte and Kubeflow are loosely coupled with cloud services to prevent lock-in. Kubeflow has several services that can be deployed locally or use a cloud service endpoint.
+A great example is the object store. We could use Amazon S3, Google Cloud Storage, or a portable object store like MinIO. Open source projects lean towards a more flexible solution depending on internal skill sets and customization desires. Using cloud services can dramatically improve reliability by improving our ability to scale our services and fault tolerance with cross-region replication. 
+Support for Multiple Programming Languages and Frameworks
+Machine learning toolkits are designed to be agnostic to programming languages and machine learning frameworks. This flexibility allows data scientists and engineers to work with tools and languages they are most comfortable with, such as Python, TensorFlow, and PyTorch. This theme will be shared throughout many chapters as we discuss the importance of flexibility in technical problem-solving. 
+Model Versioning and Tracking
+Machine learning toolkits offer model versioning and tracking features, enabling detailed record-keeping of experiments and model evolution. Versioning functionality aids in preserving a comprehensive history of model modifications, experiment variations, and outcomes, further enhancing the reproducibility of results. Kubeflow incorporates Machine Learning  Machine Learning Meta Data(MLMD) alongside tools like Katib and KFPexperiments to streamline the management and tracking of machine learning models and experiments.
+Extensibility and Customization
+Machine learning toolkits offer extensibility, which allows users to customize and extend their functionalities to meet specific requirements. Extensibility includes integrating with external tools, custom operators, and plugins. We will discuss standard tools like Volcano and Kserve integration later in the course.
+Monitoring and Logging
+Machine learning toolkits include monitoring and logging tools to track the performance and health of workflows and models. This ability is crucial for maintaining reliable and efficient machine-learning operations. This concept is a vital part of this course, and we will discuss it in further detail in subsequent chapters. 
+Are Toolkits a Necessity?
+When do we need a toolkit? Having a comprehensive set of tools like the services Kubeflow offers will dramatically improve our outcomes, but using tools just because they exist will not improve our team's potential. Knowing when we need a specific toolkit functionality can be complex. Successfully utilizing new tools and platforms takes significant effort from ML teams. Great advice regarding platforms and toolkit adoption comes from Modern Cybersecurity: Tales from the Near and Distant Future Chapter 6: Hardening the Value Stream. In this chapter, Finster argues that we can use platforms in an opinionated way to encourage improvements, but only if the right thing is easy and the behaviors we try to prevent are complicated.  He argues that this does not mean completely throwing out previous development patterns but migrating the team to more efficient deployment methods. The right thing Finster discusses is about cyber security (Finster, 2021). However, his sentiment can be applied to MLOps teams, where the right thing comes down to organizational values and goals. Processes help us automate trust in a way that benefits all those who use the toolkits. The teams agree on what changes mean and how they are implemented. Therefore, each team can produce their side of the model development life cycle assured that those further down the line will accept their delivery method. To bring value to the organization, teams must work together, communicating, agreeing upon, and implementing what is needed from those on both the “right and left” (right being production and left being inception) of our model development task. When everyone is aligned with the mission, outcomes will be improved. 
+
+Finster, B. (2021). Modern Cybersecurity: Tales from the Near and Distant Future. Morrisville, NC: JupiterOne.
+MLOps Maturity Levels  
+How Do We Measure Maturity?
+Some students may have heard discussions about MLOps maturity levels. Google has an article anyone can read titled “MLOps: Continuous delivery and automation pipelines in machine learning” that quantifies what constitutes a “mature MLOps organization.” Before someone starts comparing their organization to Google and incurs technical debt trying to solve a problem they may not have, remember that comparison is the thief of joy. Steve Mcghee, an experienced Site Reliability Engineer and a prominent voice in cloud computing and Kubernetes, often says not all problems are Google-sized problems. Google is a complex machine with many applications deployed worldwide. They also run a public cloud with thousands of customers.  Google is very mature in its MLOps journey, which might look significantly different than another organization’s journey into MLOps, which is perfectly fine! On the next page, we have defined the MLOps maturity levels to help identify the level at which an organization currently resides. Anyone wanting to hear Steve talk about being an SRE at Google can check out this podcast. 
+MLOps Maturity Levels
+Level 0 - Manual Process:
+ML models are often developed and tested in siloed, ad-hoc environments.
+Deployment is manual and infrequent, with little to no monitoring or governance.
+Level 1 - Continuous Integration:
+ML development has started to incorporate version control and continuous integration practices.
+Automated testing begins, but deployment is still mostly manual.
+Level 2 - Continuous Delivery:
+Infrastructure as code and automated deployment pipelines are introduced.
+Models can be deployed to production environments more reliably and frequently.
+Level 3 - Continuous Training:
+Automation extends to retraining models with new data, often triggered by data drift or performance metrics.
+Full pipeline automation includes data validation, model training, and deployment.
+Level 4 - Full MLOps:
+The entire lifecycle (data collection, model training, deployment, monitoring, and retraining) is automated.
+A/B testing, advanced monitoring, and sophisticated rollback strategies are in place.
+MLOps at this level is characterized by strong collaboration between data scientists, ML engineers, and DevOps.
+ If a team is trying to decide if they should or should not automate, Google discusses their journey and defense of automation in their Evolution of Automation at Google SRE manual chapter. 
+Chapter Summary
+Chapter Conclusion 
+Deciding when we need an ML toolkit, where we are in our ML journey, and what MLOps even means to us as an organization is daunting. Hopefully, this chapter helped to do the following:
+Define MLOps 
+Understand the rise of the machine learning toolkit 
+Dive into what critical components lie within ML toolkits 
+Understand the complexities of defining a one-size-fits-all journey through MLOps
+Consider how to build and integrate toolkits into platforms. 
+Take on the following knowledge check questions, and then continue to the next chapter, where we dive into Kubeflow!  
+
+
+

@@ -1,0 +1,33 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  annotations:
+    autoscaling.knative.dev/target: "10"
+    sidecar.istio.io/inject: "false"
+  name: llm
+spec:
+  predictor:
+    minReplicas: 1
+    model:
+      modelFormat:
+        name: llama-2-7b-chat
+      resources:
+        limits:
+          nvidia.com/gpu: "1"
+        requests:
+          nvidia.com/gpu: "1"
+      runtime: llama-2-7b-chat
+      storageUri: pvc://nvidia-pvc/
+  transformer:
+    timeout: 600
+    containers:
+      - image: chasechristensen/tiledb_transformer:v6
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"           
+        name: kserve-container

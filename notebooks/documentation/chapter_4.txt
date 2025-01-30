@@ -1,0 +1,117 @@
+Chapter 4.  The Origin of Kubeflow 
+Chapter Introduction
+Chapter Overview
+It is finally time to discuss the latest open source and CNCF incubating project, Kubeflow. Kubeflow aims to deploy machine learning (ML) workflows on Kubernetes in simple, portable, and scalable ways. These objectives are to improve the data movement across your Kubernetes cluster, bringing the flow to Kubeflow. In this chapter, we are going to discuss the history of Kubeflow, relay the goals of the Kubeflow project, introduce the Kuberflow architecture, and discuss how Kubernetes (the kube in Kubeflow) helps support Kubeflow’s mission of simple, portable, and scalable machine learning workflows. 
+Learning Objectives
+By the end of this chapter, you should be able to:
+
+Discuss the origin of Kubeflow 
+Describe the goals of the Kubeflow project
+Describe the Kubeflow architecture 
+Explain what Kubernetes native means in the context of Kubeflow
+The Kubeflow Project
+Introducing Kubeflow
+Kubeflow originated from Google's internal approach to operating TensorFlow. Initially, it offered a more streamlined method for executing TensorFlow tasks on Kubernetes. The project was open sourced in 2017 and has since evolved into a comprehensive framework supported by several distributions across many cloud environments. Google recently donated Kubeflow to the CNCF, ensuring Kubeflow remains in neutral territory. The donation of Kubeflow to the CNCF has motivated the community distributions to work together to develop clear conformance guidelines to certify Kubeflow distributions. Let’s explore Kubeflow’s original objectives, how they evolved into the modern portability, scalability, and composability mission, and how they benefit model development.  
+
+Kubeflow has had ambitious goals since its earliest release in May of 2018. Kubeflow’s 0.1 release provided a minimal set of packages to begin developing, training, and deploying ML. The release may seem minimal, but from the December 2017 Kubecon announcement to the May release of 0.1 the project gained 70+ contributors, 20+ contributing organizations, 15 repositories, 3100+ GitHub stars, and 700+ commits—placing Kubeflow among the top 2% of GitHub projects ever. Kubeflow was just getting started.
+
+In 2020, Kubeflow’s 1.0 release made it easier for machine learning engineers and data scientists to leverage cloud assets (public or on-premise) for ML workloads. The 1.0 announcement invited new members to help the Kubeflow community continue to support this goal. The community also announced that they graduated Kubeflow's UI (the Central Dashboard), Jupyter notebook controller , Tensorflow Operator (TFJob),  PyTorch Operator, and the profile controller. The high-level goal of this initial release was stability and ensuring Kubeflow was ready for production workloads.
+Kubeflow’s Modern Mission
+
+The main focus of Kubeflow broadened from leveraging cloud assets to bringing the DevOps concepts of composability, portability, and scalability to machine learning. ML teams quickly realized that DevOps provides an excellent framework for rapidly deploying applications, but machine learning models require additional skills to work with data-intensive machine learning applications. The movement to bring DevOps into machine learning is one of the origin points for the explosive demand for MLOps engineers today and the creation of the concept of MLOps as a whole. Let’s go ahead and define Kubeflow’s objectives. 
+Composability 
+Composability refers to the ability to assemble and disassemble various workflow components quickly. In the context of Kubeflow, developers and data scientists can select, integrate, and manage different tools and services best suited for specific stages of their ML development cycles. Tool flexibility allows for creating customized workflows that can adapt to a project's particular needs without locking teams into a single toolkit or platform.
+
+Portability 
+Portability in Kubeflow ensures machine learning workflows are migratable and executable across an organization’s environments. Portability is crucial for machine learning projects, as it allows teams to develop models in a preferred environment and then deploy models where they will be most effective. Similar projects like tilt.dev seek to unify the local development and production cloud environments to ensure development closely resembles production. The fewer deltas between a development and production environment, the fewer surprises during deployment.  A 2017 CNCF Kubecon North America talk on Kubeflow dives into this topic further.
+Scalability 
+Scalability is the ability to process current work and allocate additional compute resources to accommodate new tasks. For machine learning projects, this translates into the capability to scale up our services to train more complex models on larger datasets or to scale out our clusters to manage distributed training processes efficiently. Kubeflow's architecture allows for dynamic allocation and deallocation of resources based on the needs of a particular ML workflow, ensuring that projects can scale seamlessly without manual intervention.
+
+Kubeflow’s Value Proposition
+Kubeflow for Data Professionals
+Kubeflow defines itself as a machine learning toolkit but can also be described as an open source machine learning platform. The platform definition can be controversial because, from the earliest concepts of Kubeflow, the goal was not to be a highly opinionated platform but instead a set of integrated tools that fill the gaps left by hosted machine learning options. Let’s take a closer look at the technical and community-driven advantages of the Kubeflow project and how it maintains its philosophy of neutrality. 
+Kubeflow’s Technical Advantage 
+
+Machine learning workflows require many complex tasks, and a lot of work goes into building a stable platform with integrated services that can perform these specialized tasks. Routing, role-based access control, and job scheduling are only some of the complex functions an MLOps engineer must manage to ensure the foundational goals of portability, scalability, and composability promised by the Kubeflow toolkit. Kubeflow does not seek to solve those problems in an overly opinionated way but gives teams the flexibility to handle these issues, should they need to, without worrying about the complexity of managing individual services and their lifecycles. The flexible and composable nature of Kubeflow allows Kubeflow to remain neutral regarding tool choices, and it is simple to integrate with should a tool wish to join the Kubeflow ecosystem. Many adjacent communities, such as MLflow and Ray, have approached the Kubeflow community and proposed their projects as additional Kubeflow integrations. Their interest is due to Kubeflow’s neutral and composable philosophies and their desire to interface with other best-in-class open source tools as part of a machine learning toolkit.
+The Kubeflow Community Advantage
+Kubeflow’s ability to continually grow and act as a powerful toolkit for integrating machine-learning solutions is due to its community-driven technical expertise and culture of collaboration. The need to design a composable, portable, and scalable solution that fits the structure and problems many organizations face extends far beyond the specialized knowledge of any one team or company. The Kubeflow community includes several working groups with contributors of all sizes, all aligned to build flexible solutions that improve the industry's chances for successful machine learning projects. The working groups are pocket communities with specialized knowledge around the tools they seek to integrate into the Kubeflow toolkit.  The power of these contributors and the scope of their solutions improve the feedback loops and maturity of the Kubeflow machine learning toolkit. Kubeflow’s official GitHub repo has 13.4k stars, a testament to the reach and potential of the Kubeflow solution. Being a part of this community means gaining access to an open source community of experts who strive to develop and support a collaborative solution that enables teams of all sizes to embrace MLOps and improve their model development lifecycles.  
+Kubeflow’s Architecture
+Kubeflow Components 
+Kubeflow discussions typically start with Kubernetes' role in abstracting cloud infrastructure and end with serving models externally from the Kubernetes cluster. However, Kubeflow encompasses multiple components that support the entire model development lifecycle. The Kubeflow components are The Central Dashboard, Kubeflow Notebooks, Kubeflow Pipelines, Katib, and TheTraining Operator. This next section will define the elements and their roles within Kubeflow. 
+
+The diagram below gives a high-level overview of the Kubeflow architecture to get us started. It is worth noting that  Kserve (formerly KFserving), although in the diagram, is no longer directly a part of the Kubeflow project. Kserve remains a highly implemented integration due to its strength as a serving option and its history with the community. We will be covering Kserve in later chapters. The diagram shows Kubeflow as the centralized integration point on Kubernetes. Kubernetes abstracts away the public clouds. To the right and left of Kubeflow, we have the various Kubeflow components, and on top of Kubeflow, we have the different machine learning frameworks and model registries. 
+
+ 
+
+
+Kubeflow Architecture
+Source: Kubeflow Documentation
+Alt: Diagram of a high-level overview of the Kubeflow architecture.
+
+Kubernetes, Configurations, and Kubeflow
+Kubernetes has realized the goals of portability, composability, and scalability. One of the initial goals of the 2017 Kubecon announcement for the Kubeflow project was to bring in Kubernetes contributors from a wide array of environments. If Kubeflow was widely adopted, it would need to run in any cloud or data center. The Kubernetes community had developed conformance standards and was working to reduce the toil of manually running applications at scale through the operator and controller patterns. Kubeflow sought to work with the Kubernetes community’s workload expertise to ensure Kubeflow could run in any environment. Kubernetes may seem like a portability solution, but the unified layer Kubernetes provides improves composability and scalability. 
+
+Kubernetes takes configuration data that is generally a complex set of POST and GET calls and abstracts them into YAML manifests. These manifests use desired state controllers to facilitate idempotent deployments of workloads. Kubernetes allows Kubeflow to deploy services, jobs, policies, and more. Additionally, the Kubernetes controllers will ensure that what we expect in our manifest (replicas, container images, environment variables, etc.) matches the current environment state. Before anyone even thinks about machine learning, Kubernetes handles a significant part of the configuration drift and additional complexity these systems require. 
+
+Kubernetes Scaling Kubeflow
+Machine learning training jobs can be massive. ML jobs are so resource-intensive that companies like OpenAI complain they need more resources. Kubernetes provides a way to scale a cluster (the fleet of machines running your code) based on demand. If a node ( a single machine within your cluster) has no scheduled jobs, the autoscaler will remove the node from the cluster.  A typical example is the need to provision GPU nodes for a particular machine-learning task. GPU nodes are expensive to run.  A CPU node may cost $0.03398 / vCPU an hour, whereas adding GPU to that node could cost $0.35 per GPU per hour for a low-performance GPU.  Teams want to ensure they don’t provide the cluster with expensive nodes only for them to remain idle. Kubernetes will schedule jobs to the node based on a resource request and remove the node from the cluster once the GPU-powered job is complete.
+Public Clouds
+We begin conversations about Kubeflow architecture with Kubernetes because Kubernetes abstracts away the infrastructure layer, whether in the cloud or your data center. Kubeflow uses Kubernetes as a foundation for deploying its services. Kubeflow, while fully operating its services within the Kubernetes nodes supported by cloud-provided storage, only partially forsakes the cloud's capabilities. Instead, it smartly utilizes cloud services as specialized endpoints, allowing Kubernetes to tap into these resources, enhancing Kubeflow's reliability and scalability. Kubernetes may use tools like MinIO to abstract away cloud services from end users but will back those tools with cloud services, such as S3 or cloud storage.
+
+A distribution-specific example is using a Cloud SQL proxy to support Kubeflow pipelines instead of in-cluster MySQL deployments when running Kubeflow on the Google Cloud Platform. Users no longer need to manage the complexity of MySQL on Kubernetes. Instead, the complexity is handled by the cloud provider. 
+
+Another way Kubeflow uses the cloud is the decision in Pipelines V2 to introduce the concept of a pipeline root. A pipeline root is an artifact store where your pipeline inputs and outputs are stored. Depending on which environments your organization is comfortable deploying in, a pipeline root could be Azure, GCP, S3, or MinIO. With on-demand infrastructure and highly available services, the cloud provides scale and reliability that Kubeflow can fully leverage. 
+Kubeflow Central Dashboard
+The Kubeflow Central Dashboard is a service that improves a team's capability to interface with the Kubeflow machine learning services. The dashboard enables teams to create notebooks, visualize experiments, see model endpoints, and more. The Kubeflow Central Dashboard can be exposed externally to the cluster so teams can access it via their browsers. Kubeflow has APIs for orchestration, yet many teams use the Kubeflow Central Dashboard as their initial user experience when interfacing with Kubeflow. The dashboard is very customizable should teams want to add additional application options for their end users. The Kubeflow Central Dashboard is namespaced, so end users only see what the platform team allows. The Kubernetes and Istio Role-Based Access Control functionality logically separate teams and controls service-to-service traffic via policies. 
+Kubeflow Notebooks
+Kubeflow Notebooks provide integrated development environments (IDEs) for teams to leverage. The notebooks can be Jupyter, RStudio, or VisualStudio Code servers by default, but you can customize the server images to fit your organizational needs and non-negotiables. The notebook graphical user interface (GUI) allows data teams to request resources and specific images for their specialized ML/AI tasks. Kubeflow, with the help of Kubernetes, will schedule the notebook server and expose it so the end user can leverage the IDE. Notebook servers are namespaced, but multiple team members can be allocated to a single namespace and collaborate on the same notebook server. Often, individuals have their namespaces while teams have separate collaborative ones. Since namespaces are merely logical barriers, teams must provision a different cluster if they want physical separation.  The notebook servers also provide namespaced terminal access to the underlying Kubernetes cluster.  Below is a screenshot of the Kubeflow Notebooks UI within the Kubeflow Dashboard. The UI contains options for launching a notebook, including notebook type, CPU/RAM settings, GPU settings, and options for defining data volumes.
+
+
+Kubeflow Notebook Creation User Interface
+Alt: A screenshot of the Kubeflow Notebooks UI within the Kubeflow Dashboard. The UI contains options for launching a notebook, including notebook type, CPU/RAM settings, GPU settings, and options for defining data volumes.
+
+Kubeflow Pipelines
+Kubeflow Pipelines (KFP) is the workflow orchestration tool for the Kubeflow project. Kubeflow pipelines are modular components connected to handle one or many machine-learning tasks. KFP enables teams to schedule jobs across their Kubeflow cluster. The pipelines are namespaced, and due to this feature, platform teams can use the Kubernetes resources quota functionality to restrict resource allocation across the cluster. Why are resource quotas essential to ML teams? Resource quotas help regulate the profitability of ML projects. Pipelines can scale very quickly and consume a lot of resources. This scaling often leads to teams facing an expensive cloud bill. The higher the cloud bill, the more valuable a model must be to ensure project profitability. Resource quotas create guardrails for model development teams, allowing teams to be more intentional when allocating resources to a specific project and improving the odds of project profitability.  
+
+KFP also provides a directed acyclic graph (DAG) to help troubleshoot and visualize pipeline runs. Below is a picture of a pipeline DAG. The arrows represent the logical flow of the pipeline from input to output.
+
+Kubeflow Pipelines Directed Acyclic Graph
+
+
+Image,© 2024 The Kubeflow Authors.
+Documentation distributed under CC BY 4.0
+https://www.kubeflow.org/docs/images/pipelines-xgboost-graph.png
+
+ALT = “A screenshot of the runs tab within the Kubeflow Dashboard. This part of the Kubeflow Dashboard UI contains a visualization graph of the pipeline and its components.”  
+Katib
+Katib is a Kubernetes-native project for automated machine learning or AutoML. AutoML is a field of artificial intelligence that focuses on automating the process of applying machine learning to real-world problems. Katib aims to make machine learning more accessible to non-experts and to improve efficiency for experienced practitioners. Katib is often considered a hyperparameter tuning solution but supports early stopping and neural architecture search (NAS). Below, we have an example Katib hyperparameter tuning graph. 
+
+
+
+
+Image, © 2024 The Kubeflow Authors.
+Documentation distributed under CC BY 4.0
+https://www.kubeflow.org/docs/components/katib/images/random-example-graph.png
+
+ALT = “A screenshot of the hyperparameter tuning graph found within the UI of the Kubeflow Dashboard.”
+
+Training Operator
+The Kubeflow Training Operator, formerly the unified training operator, is a framework-agnostic way to submit training jobs to Kubeflow. The training operator allows you to use Kubernetes manifests to simplify job submissions. For instance, IT departments are no longer required to configure a Spark cluster manually on an as-needed basis. A data professional can directly submit a Kubeflow manifest, which automatically provisions a Spark cluster and submits the specified Spark job to this newly established cluster. The allocated resources from the completed job are then released, and the cluster can be scaled down. In the case of a static on-prem environment, we can ensure our cluster has as many resources as possible for other tenants. 
+
+At the time of publishing, the operator supports the following training jobs: 
+TensorFlow Training (TFJob)
+PaddlePaddle Training (PaddleJob)
+PyTorch Training (PyTorchJob)
+MXNet Training (MXJob)
+XGBoost Training (XGBoostJob)
+MPI Training (MPIJob)
+Chapter Summary
+In this chapter, we discussed the origin of Kubeflow and how it can help you in your career as a data professional. What began as a simple way to deploy TensorFlow jobs on Kubernetes has now evolved into a community-driven open source machine learning toolkit to simplify building, promoting, and scaling machine learning workloads. Kubeflow works to solve problems for organizations of all sizes and maturity levels via APIs, Graphical User Interfaces, training operators, pipelines, AutoML solutions, and even curated notebooks (IDEs)—all while abstracting away the complexity of the cloud and cloud-native deployments with Kubernetes.  Kubeflow is a machine-learning toolkit solution and a centralized and community-driven integration point for projects looking to solve complex machine-learning problems using cloud-native patterns. 
+
+
+
+
+
+
+
+

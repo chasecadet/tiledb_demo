@@ -1,0 +1,104 @@
+Chapter 2. The Model Development Lifecycle
+
+Chapter Overview and Learning Objectives
+Chapter 2 Overview
+What framework do we use to help understand the birth and retirement of a model? Where do we start when we want to build a model that provides value to the business? What tools do we use? This chapter will answer all of these questions as we explore the model development life cycle.
+Video: Chapter Introduction
+Learning Objectives
+By the end of this chapter, you should be able to:
+Discuss the individual steps of the model development lifecycle and their purpose
+Define common pain points for the individual steps within the model development lifecycle 
+Review some of the tools used as part of the specific steps in the model development lifecycle 
+Explain data-centric vs. model-centric model development
+
+The Model Development Lifecycle
+A Model for Model Development 
+The model development lifecycle is the journey from concept to development to retiring a model. We know execution matters for many ML professionals, so think of the model development lifecycle as a framework you can use to plan out your machine learning project and create a cohesive path to production. Not all teams will formally follow each of these steps. The model development lifecycle is there merely to provide guidance. Sometimes, teams are small enough that one person can handle multiple steps alone. Once teams begin to scale, they will specialize and consider a more robust model development lifecycle strategy. This section is about the stages of the model development life cycle and how an organization can begin implementing them.
+
+
+
+Stages of the Model Development Lifecycle
+
+The Problem Definition and Scoping Stage
+
+The first stage of the model development lifecycle is about scoping and determining if we can solve a problem with data. To be successful at this stage, organizations must have an apparent problem they are trying to solve. Without a clear problem statement, the rest of the model development lifecycle becomes infinitely more complicated. 
+Some questions that need answering are: 
+What problem are you trying to solve?
+How can data help you solve it? 
+If a non-autonomous system or person were to solve this problem, what steps/skills/information would they require to get the job done? 
+ 
+Duck Application Problem Definition
+Our previously discussed Duck Classifier project uses machine learning to accurately identify and classify duck images among various other bird species from a collection of wildlife photographs. We're addressing the following problem statement:
+We require a system that enables users to classify ducks in images easily without needing Avian biology or machine learning expertise. Although we possess a comprehensive dataset of bird images, we aim to direct users efficiently to specific information about ducks, including visual characteristics and species details, based on their queries. Our application requires an intuitive interface that doesn't demand users to learn complex query languages or undergo extensive training to use the application.
+This scenario calls for a deep-learning model capable of accurately analyzing images and distinguishing ducks from other birds. The goal is clear. We want to provide an automated solution that feels seamless for the user, akin to having a knowledgeable guide (previously our duck-watching friend) who can instantly identify ducks in any photograph. 
+We understand that just like a skilled birder uses years of experience and knowledge to identify species, our model needs to learn from a large and diverse dataset of bird images. The dataset should include ducks and similar-looking species to ensure the model can discern subtle differences and accurately classify pictures. We may need more than one dataset if we need a larger distribution of image types. Providing the model with its knowledge base of images will ensure it aligns with expert identification methods and delivers reliable results.
+By defining what we need from the model and the application, we're setting the stage for developing a user-friendly tool that empowers enthusiasts, researchers, and the curious public to recognize and learn about ducks in their natural habitats.
+The Data Extraction Stage
+The adventure begins as we access the crucial data to train our model to distinguish ducks from other birds. You might have heard the saying, "Data is the new oil."  Well, that rings especially true here. However, just like drilling for oil, extracting data comes with challenges and considerations.
+At this early stage, several pivotal questions pave the way for a successful model development lifecycle:
+Access to Data: Do we have the means to access high-quality images of ducks and other birds necessary for training our model? Securing a diverse and comprehensive dataset is crucial for the model to learn effectively.
+Data Gathering Methods: How are we collecting these images? Are we using publicly available datasets, partnering with duck groups, or deploying field teams to capture the data firsthand?
+Volume of Data: Is the dataset large and varied enough to cover the multitude of duck species, their habitats, and behaviors, ensuring our model can generalize well across different scenarios? Not having balanced data can become problematic when we run into overfitting, where the model may not recognize the features of less common ducks. We may need to use techniques like the Synthetic Minority Over-sampling Technique (SMOTE) or other tools to improve our dataset.
+Data Freshness: How current is our data? For the model to remain relevant, it is trained on recent images that reflect the current state of duck populations and their environments.
+Data Format and Accessibility: Is the data structured for efficient querying and processing? Ensuring the data is usable is critical for smooth progression through the model development stages.
+Navigating these questions highlights the complex problem of effectively structuring, storing, gathering, and accessing data—a task where data engineers shine as unsung heroes. While data scientists and machine learning engineers often have more star power, the data engineers lay the groundwork by ensuring the data pipeline is robust, scalable, and efficient. 
+Tools
+At this stage, the following  ETL (Extract, Transform, Load) tools are often used:
+ Talend 
+Apache Beam
+Data Analysis Stage
+The data analysis stage is a crucial exploration of our dataset's heart. In this phase, we GO DEEP into the imagery of ducks and other bird subjects, aiming to unravel the features that will inform our model's learning process. We embark yet again on answering critical questions that shape the path forward:
+Data Relevance: Does our dataset contain the right mix of images to train our model effectively? We cannot feed our network the same picture or pictures with the ducks doing the same thing. We need diversity because, in the real world, ducks can be in all sorts of environments, and we want to be able to classify them effectively.
+Feature Importance: What aspects of the images are crucial for distinguishing ducks from other birds? Identifying key features, be it color, texture, shape, or background elements, is fundamental in teaching our model to recognize ducks accurately.
+Data Cleaning: What anomalies or inconsistencies need addressing in our dataset? Cleaning the data might involve removing duplicates, correcting labels, or filtering out low-quality images to ensure our model trains on the best possible data. Giving the model poorly labeled or bad images will impact our results. Imagine having 3,000 images of ducks and needing 1,000 pictures tagged. How would you know all 1,000 images are accurate and not the root of your modeling woes? What does a “good label” look like? Teams have to write labeling guides. Here is a great blog titled "How to Write Data Labeling/Annotation Guidelines" that walks through this painful yet necessary task. Your labelers are also human and can inject bias into your models. 
+Feature Engineering: Are there features we need to develop or extract to enhance our model's learning capability? This step could involve creating new attributes, such as identifying specific duck patterns or behaviors from the images that are not immediately apparent but may significantly impact the model's accuracy.
+Tools
+At this stage, standard tools like Pandas are used for data manipulation, and Matplotlib or Seaborn are used for data visualization. Additionally, notebooks offer an interactive environment where these analyses can be performed, documented, and shared.
+
+Data Preparation Stage 
+In the lifecycle of our Duck Classifier model, the data preparation stage is where the dataset transforms into a structured form primed for machine learning. For our duck model, this stage is particularly crucial. Here’s the process:
+Dataset Division: Our comprehensive collection of bird imagery is methodically divided into training, validation, and test sets. This division ensures that our model learns from a diverse array of examples (training set), fine-tunes its parameters to prevent overfitting (validation set), and is ultimately evaluated on unseen images (test set) to gauge its effectiveness.
+Feature Selection and Cleaning: Within the vast expanse of data lie the keys to identifying ducks accurately—specific features that highlight the unique aspects of ducks compared to other birds. This stage involves a thorough cleaning process to remove any inconsistencies, such as mislabeled images or irrelevant features. What remains is a distilled dataset rich with the most relevant features for duck identification. If we go the deep learning route, we learn that the model will detect the features. Still, this is a critical aspect of data preparation for many machine learning workflows. 
+Scaling and Encoding: Recognizing that ducks come in various sizes and are depicted in different environments across the dataset, scaling adjusts the images to a standard size, ensuring consistency in how the model perceives each subject. Additionally, one-hot encoding is applied to categorical data, such as species labels, transforming them into a format that the model can process effectively.
+Tools
+At this stage, tools like Scikit-learn (Python) offer a suite of preprocessing functions that help in scaling and encoding. Pandas (Python) is our go-to for data cleaning and feature selection. Thanks to its intuitive handling of tabular data. TensorFlow (Python), with its extensive machine learning libraries, supports data preparation and the subsequent stages of model training and evaluation.
+Model Training Stage 
+In the model training stage for our Duck Classifier, we can use a unique tool called Pytorch to teach the model how to spot ducks in the images we have prepared. This part of the process is where all our preparation comes alive. PyTorch helps us by making it easier to adjust our model as it learns from the data, trying to improve its guesswork on whether an image shows a duck.
+We feed the model many images during this stage, telling which ones show ducks. The model makes its best guess on each image, learns from any mistakes, and tries to do better next time. This learning process is very similar to how we, as humans, learn new skills. The more the model practices (or learns from the images), the better it gets at recognizing ducks.
+We also want to keep an eye on how well the model is doing by comparing its current ability to identify ducks against how it did in the past and what we expect it to achieve in the future. Our model must memorize the images we show and learn to recognize the features that make a duck a duck. Feature and pattern recognition allow the model to identify ducks in new images it hasn't seen before.
+We mentioned Pytorch as a model training tool, but many other supported frameworks exist. Simplifying our ability to use a wide variety of frameworks is the power of the unified training operator within Kubeflow. In a later chapter titled The Unified Training Operator and Machine Learning, we will dive into this in greater detail. 
+The Data in Data Science 
+We need to understand the model's value during this training step and the images we are using to train the model. The AI/ML world is moving from a more model-centric (tuning the model to work better with the data) to a more data-centric (curating the data to improve the model) worldview. Each image we use to train our model may or may not benefit the model's accuracy. A great example is if you were to learn about ducks, you wouldn’t need to see EVERY single picture of a duck. You would need to see some subset of images of ducks and maybe see some ducks in the wild. Then, you could safely identify ducks. Models are like this, too. You would be incredibly bored if we showed pictures of the same duck. The core idea of big data suggests that feeding our model an overload of duck images might not enhance its learning, essentially turning this process into pointless, busy work. This approach wastes valuable time and computing resources for organizations. Imagine the cost of spending time and money to label tons of images that the model already recognizes. Furthermore, crafting detailed instructions for labelers to identify ducks consumes significant time and money. 
+Model Serving
+Now that our Duck Classifier model is trained and ready, it's time to share it with the world! We do this by exposing our model with an API, making it accessible as a cloud service or directly within apps. This step is crucial for bringing our duck-identifying talents to users everywhere, whether scientists, educators, or bird enthusiasts using their smartphones.
+The job of deploying our model falls to the machine learning engineers, who are responsible. They need to ensure that when people use our Duck Classifier, it's accurate, secure, able to handle lots of requests, and able to deal with problems without causing a flap.
+Serving the model means more than just making it available; it involves carefully managing how it interacts with the outside world. For instance, we must ensure it understands the images it will see in real-life scenarios and is robust enough to handle unexpected inputs. Also, we need to be precise about the software and tools the model relies on, opting to set these up beforehand rather than fetching them on the fly, which can introduce risks or inconsistencies.
+In essence, deploying our Duck Classifier ensures it can reliably tell a duck from a non-duck under various conditions while being fast, secure, and ready to scale to meet demand. It's about bringing the model from our test environments into real-world applications, where it can help people learn about and appreciate the diversity of ducks in their natural habitats. 
+Tools
+Some commonly used serving tools are NVIDIA Triton Inference Server, TensorFlow Serving, Seldon Core Serving, and Kserve.  We will discuss Kserve in more depth in the Common Kubeflow Integrations chapter. 
+Model Monitoring
+In DevOps and Site Reliability Engineering (SRE), monitoring systems are part of the daily routine. Tools like Prometheus check everything from resource usage to whether a service runs smoothly. When it comes to our Duck Classifier model, monitoring becomes more complicated. 
+Like traditional monitoring, we must monitor our service's health and performance. But with our Duck Classifier, there's an additional twist: we also need to watch the data it processes closely and the predictions it makes.
+In our previous chapter, we discussed what a binary classifier prediction (duck or not_duck) response looked like. Here is what our new multi-duck classifier response might look like.
+
+{
+  "predictions": [
+    {"type": "Mallard", "score": 0.70},
+    {"type": "Wood Duck", "score": 0.20},
+    {"type": "Pintail", "score": 0.05},
+    {"type": "Teal", "score": 0.05}
+  ]
+}
+
+Notice the prediction provides each category of duck it is attempting to predict as well as the confidence score for each category similar to our binary classifiers prediction in the previous chapter.  We collect these responses and the input data when monitoring our new classifier. If the picture was a Mallard but the model had a high confidence score in our image being a Wood Duck, we need to use that miscategorized image to train our model. When the types of images the model encounters change, it is called "data drift." The context of the problem changing is known as "concept drift."  Concept drift could happen if, over time, new types of ducks are introduced into the dataset, or the definition of what constitutes a particular type of duck evolves. 
+
+Concept and data drift are critical issues we must monitor, but we must also ensure our Duck Classifier doesn't develop biases, primarily used in diverse environments. We wouldn't want it to be better at recognizing certain types of ducks over others without justification, as this could skew its usefulness for different user groups.
+One particularly tricky scenario is what's known as adversarial AI, where someone might intentionally try to trick our Duck Classifier with images designed to confuse it. Just like a clever disguise might mislead a person, the adversarial data can fool our model into making wrong predictions. Traditional monitoring tools might not flag this as an issue since the incoming data seems legitimate, but the outcomes (e.g., incorrectly identified ducks) could be misleading or problematic.
+Model Retiring
+When it comes time to retire our Duck Classifier model, it's like bidding farewell to a trusty pair of binoculars that have helped us spot countless ducks. In the model development cycle, retiring a model is a natural step — signaling that it's time to upgrade to a more advanced version or decommission the model because it's no longer needed or supported.
+The critical consideration in this phase isn't just about moving on to better technology; it's about understanding the ripple effect of this decision. Imagine our Duck Classifier model as a popular guide in a birdwatching community. If we decide to retire this guide, we must consider how it will affect all the birdwatchers who rely on it. As highlighted in the paper "Machine Learning: The High-Interest Credit Card of Technical Debt,” unexpected users might be impacted by changes to the model, much like changing an API can affect applications that depend on it.
+To navigate these effects, we treat our model like a service, establishing clear contracts or agreements with its users. This way, when it's time to retire the model, we can communicate this change effectively, ensuring that everyone who relies on our Duck Classifier is prepared and not left scanning the skies with outdated tools. This careful transition might involve switching to the new model version, offering support during the changeover, or simply explaining why the model is being retired.
+Retiring a model is a process marked by consideration and communication, ensuring that while one chapter closes, the transition to the next is as smooth and disruption-free as possible. Whether due to advancements in duck identification technology or changes in the avian landscape, retiring a model is done with the same diligence and care as when it was first launched, honoring its contributions and ensuring its legacy lives on in the improvements that follow.
+Chapter Summary 
+Who knew it would take all those steps to finally be done with ducks by retiring our model? We learned that data is the key to unlocking insights, but first, we need to understand the problems we face and whether or not we have the data to solve them. Once we have a clear problem definition, we can extract the data, analyze the data, prepare the data, train the model, serve the model, monitor the model, and finally retire the model. We learned about the various tools used at each stage of the Model Development Lifecycle and touched on some topics we will explore in later chapters. Congratulations on making it through!  
+

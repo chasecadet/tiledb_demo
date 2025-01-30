@@ -1,0 +1,213 @@
+Ch 10. Common Kubeflow Integrations
+Chapter Overview
+Kubeflow is designed to be composable because, in machine learning, there is often more than one way to solve a problem. The CNCF and Linux foundation have many projects that help solve ML problems in new and exciting ways. These projects integrate well with Kubeflow. This chapter will discuss the Volcano project for batch processing and the Kserve project for serverless model deployment and how they can help augment Kubeflow.
+
+Learning Objectives
+By the end of this chapter, you should be able to:
+Discuss the value of batch processing and scheduling
+Discuss the goals and history of the Volcano project
+Discuss the requirements for using Volcano within your Kubeflow environment
+Launch a simple Volcano job 
+Discuss the history of the Kserve project, its goals and the problem that KServe solves
+Build and submit a Kserve manifest to serve a model 
+
+Volcano
+Introduction
+Volcano is a project designed for batch scheduling and running high-performance workloads on Kubernetes. 
+In this section we will:
+Define gang scheduling and discuss the problems it solves 
+Introduce the Volcano project
+Expose requirements for leveraging Volcano on Kubeflow 
+Provide an example of a Volcano-empowered workflow
+Gang Scheduling
+When we say batch scheduling in the context of Volcano, we don’t mean batches like our previously discussed batch applications and jobs, such as what we saw with Kubeflow Pipelines and the Training Operator. What we mean is gang scheduling.
+
+Gang scheduling allows you to schedule multiple pods in a group. The Kubernetes scheduler attempts to schedule pods one at a time. The default pod, single-pod scheduling strategy can lead to gridlock and wasted resources. Let’s explore an example.
+
+Say we are scheduling five pods for our ML job, and our cluster is almost saturated. The default scheduling behavior will schedule the pods that the cluster can support but might not be able to plan for all the required pods. The scheduled pods will wait on the cluster to start their job, the unscheduled pods will never schedule, and new jobs won’t have space on the cluster until these resources are freed. We now have gridlock. 
+
+Gang scheduling lets us consider the resource requirements of ALL the pods that make up the job. We can prevent the scheduler from scheduling three out of five pods, which means our cluster-running pods cannot start until the rest of the gang has been scheduled. The grid-lock scenario is only one of the many scheduling scenarios that Volcano can help us with, so let’s go ahead and introduce Volcano.
+Volcano
+The Volcano project was open-sourced in 2019 and moved to CNCF incubation in 2022. Volcano aims to provide intelligent batch (gang) scheduling for machine learning, bioinformatics/genomics, and other big data applications. 
+
+
+ML, genomics, and other big data workloads often leverage machine learning frameworks that the Training Operator supports. Combining the need for ML frameworks supported by the Training Operator and gang scheduling makes Volcano a powerful Kubeflow integration. We can now ensure our clusters don’t freeze due to poor scheduling decisions and can do this in a way that is operationalized and simplified by the Training Operator. 
+
+Coscheduling capability is available to standard Kubernetes users via plugins, but Volcano does more than just schedule pods by adding up total resource requests. Volcano supports a range of advanced scheduling scenarios through VolcanoJobs, PodGroups, and Queues. Scheduling improvements include considering the cluster’s topology and underlying compute architecture. 
+
+You may ask why we don’t just push Volcano’s functionality directly to the default scheduler. Well, Volcano cannot be served as a plugin to the default scheduler because Volcano is already an entirely separate scheduler with its own set of plugins that improve its scheduling capabilities further. Combining the two would be combining two different communities and code bases.
+Check out this community blog post to learn more about Volcano.
+
+Below, we have an image of Volcano handling a gang-scheduling scenario. Notice that Volcano will ensure all the pods can be scheduled before scheduling them. The pods are part of what Volcano calls “tasks.”
+
+
+
+
+Gang Scheduling
+
+
+ALT= “Graphic showing gang scheduling as it relates to a job and a task with text boxes listing the tasks”
+Volcano and Kubeflow
+Volcano can be integrated with Kubeflow but is not installed by default. It is an additional integration and scheduler that the cluster can use. To get started with Volcano, you need to install It.
+
+The Volcano community will provide Volcano support, not the Kubeflow community directly.  Depending on the root of the problem and what project owns that component, you may need members from both communities to troubleshoot issues. We encourage you to join Volcano discussions if you use the project and wish to interface with the community.
+
+In the test cluster we used for the supporting video, we installed Volcano with the command:
+ 
+kubectl apply -f https://raw.githubusercontent.com/volcano-sh/volcano/release-1.7/installer/volcano-development.yaml
+
+You then should see several resources being created.
+
+namespace/volcano-system created
+namespace/volcano-monitoring created
+serviceaccount/volcano-admission created
+configmap/volcano-admission-configmap created
+clusterrole.rbac.authorization.k8s.io/volcano-admission created
+clusterrolebinding.rbac.authorization.k8s.io/volcano-admission-role created
+service/volcano-admission-service created
+deployment.apps/volcano-admission created
+job.batch/volcano-admission-init created
+customresourcedefinition.apiextensions.k8s.io/jobs.batch.volcano.sh created
+customresourcedefinition.apiextensions.k8s.io/commands.bus.volcano.sh created
+serviceaccount/volcano-controllers created
+clusterrole.rbac.authorization.k8s.io/volcano-controllers created
+clusterrolebinding.rbac.authorization.k8s.io/volcano-controllers-role created
+deployment.apps/volcano-controllers created
+serviceaccount/volcano-scheduler created
+configmap/volcano-scheduler-configmap created
+clusterrole.rbac.authorization.k8s.io/volcano-scheduler created
+clusterrolebinding.rbac.authorization.k8s.io/volcano-scheduler-role created
+service/volcano-scheduler-service created
+deployment.apps/volcano-scheduler created
+customresourcedefinition.apiextensions.k8s.io/podgroups.scheduling.volcano.sh created
+customresourcedefinition.apiextensions.k8s.io/queues.scheduling.volcano.sh created
+customresourcedefinition.apiextensions.k8s.io/numatopologies.nodeinfo.volcano.sh created
+mutatingwebhookconfiguration.admissionregistration.k8s.io/volcano-admission-service-pods-mutate created
+mutatingwebhookconfiguration.admissionregistration.k8s.io/volcano-admission-service-queues-mutate created
+mutatingwebhookconfiguration.admissionregistration.k8s.io/volcano-admission-service-podgroups-mutate created
+mutatingwebhookconfiguration.admissionregistration.k8s.io/volcano-admission-service-jobs-mutate created
+validatingwebhookconfiguration.admissionregistration.k8s.io/volcano-admission-service-jobs-validate created
+validatingwebhookconfiguration.admissionregistration.k8s.io/volcano-admission-service-pods-validate created
+validatingwebhookconfiguration.admissionregistration.k8s.io/volcano-admission-service-queues-validate created
+
+And eventually, when the deployment is done, you will see
+
+kubectl get pods -n volcano-system
+NAME                               	READY   STATUS 
+volcano-admission-8cc65c757-wtzq5  	1/1 	Running volcano-admission-init-ptpfk       	0/1 	Completed         
+volcano-controllers-56588b7df6-fs945 1/1   Running 	     	
+volcano-scheduler-d9df4b9-62pjk    	1/1   Running 
+
+
+
+We can then follow the Kubeflow documentation instructions to set Volcano as a scheduler for the Training Operator. You must add the line - --gang-scheduler-name=volcano to the training-operator deployment manifest. Do not edit the pod directly. Once the deployment has been updated, a new pod will be deployed, and the previous pod will be deleted.
+
+The Volcano scheduler and operator in Kubeflow achieve gang-scheduling by using PodGroup. The operator will create the job’s PodGroup automatically. Don’t worry; the service will handle the routing to the new pod.
+
+Volcano Summary
+Volcano helps teams solve the problems created by the need to schedule services in a predictive manner as a group. Without scheduling pods as a group, teams can run into grid-locked clusters. Volcano solves this problem via gang scheduling. Volcano also integrates well with common frameworks used to solve data-intensive problems, which the Kubeflow Training Operator supports. Together, teams can use the frameworks they need with reduced toil and schedule their workloads intelligently, improving their operationalization of these tools and, by extension, their project lead time. Volcano is an external component of Kubeflow and is supported by the Volcano community. The Volcano component must be installed independently, and the Training Operator must be configured to support Volcano-empowered scheduling. We encourage Volcano users to interface with the Volcano community.
+
+
+Kserve
+Introduction
+From the official git repo: 
+
+“KServe provides a Kubernetes Custom Resource Definition for serving machine learning (ML) models on arbitrary frameworks. It aims to solve production model serving use cases by providing performant, high abstraction interfaces for common ML frameworks like Tensorflow, XGBoost, ScikitLearn, PyTorch, and ONNX.” 
+
+This chapter will explore these concepts by:
+
+Discussing the need for model servers and APIs 
+Discussing the complexity of serving models behind APIs
+Introducing Kserve as a solution to common serving issues
+Demonstrating how to serve a model with Kserve.
+Models as a Service
+As discussed in our previous chapter on the role of applications vs. models, we learned that models are part of an application but are not the entire application. A model can be embedded or served via an endpoint. We serve models so that we can send data to the model as a request and receive predictions as a response. The application can then handle those predictions based on thresholds mapping to specific outcomes. In many ways, we can think of models as just another service. A service could be an internal service running within an application in a monolithic/embedded fashion or decoupled from the application as a microservice using containers to virtualize and schedule it.
+
+Suppose we choose to decouple our model from the underlying application. In that case, we can serve a new model version without recompiling and promoting the application(s) that consume the model. We can also scale the model independently of the application and be more granular with our resources. 
+
+
+We now have a model as a service that can be adjusted behind an endpoint and deployed in an A/B or canary fashion progressively like a traditional DevOps application. To do this, teams must be able to deploy their models consistently and efficiently. To do this, teams leverage specliazied serving frameworks. 
+Serving Frameworks 
+What do data science teams do once they have a trained model and wish to serve it externally to their notebook or system? Teams often front the model with Rest APIs so the model can receive requests in a language-agnostic fashion. As long as the data sent to the API is correctly formatted according to the API's specifications (typically as JSON or XML), and the responses are understood data structures (again, usually JSON or XML), the specific programming language used to implement the model or to interact with the API is irrelevant. The RESTful setup allows for great flexibility in integrating systems, as clients written in any language that can make HTTP requests and parse HTTP responses can interact with the API.  
+
+Using Rest APIs does not mean that our models can be served with little regard for how they were trained in the first place. The Rest APIs are the interface to the underlying serving architecture, dependent on the ML framework used to train the model. Some examples are Pytorch Serving to serve a Pytorch model and TensorFlow Serving to serve a TensorFlow model.
+
+
+Before the advent of specialized model-serving frameworks and platforms, teams often relied on custom-built solutions using web frameworks like Flask, Django, or FastAPI in Python to serve their machine learning models as web services. This approach provided the flexibility to integrate ML models into web applications, but it required developers to manually handle many aspects of the serving layer, including:
+
+Model Loading: Code to load the trained model into memory to make predictions.
+API Endpoints: Creation of HTTP endpoints that can accept input data (e.g., in JSON format), process it as needed (such as reshaping, normalization, etc.), use the model to make predictions, and then send back the results as HTTP responses.
+Data Preprocessing and Validation: Implementing input data validation and preprocessing to ensure that the data fed into the model matches the format and structure it expects.
+Concurrency and Scalability: Designing the application to handle multiple requests simultaneously often involves understanding and implementing asynchronous request handling and scaling strategies.
+Security: Adding authentication, authorization, and data encryption to ensure the API is secure and accessible only to authorized users.
+Error Handling: Implementing robust error handling to deal with issues like malformed input data, model loading errors, or unexpected server issues.
+Deployment: Packaging the application for deployment, which can include containerization (e.g., using Docker) and setting up cloud or on-premises servers to host the application.
+Monitoring and Maintenance: Setting up logging, monitoring, and alerting to monitor the application's health and performance in production and applying updates or fixes as needed.
+
+Kserve seeks to abstract away all the above workflows as a serverless and framework-agnostic model deployment solution. 
+
+Introducing Kserve
+Developed collaboratively by Google, IBM, Bloomberg, NVIDIA, and Seldon in 2019, KFServing was published as open source in early 2019. A 2020 Kubecon talk in Amsterdam announced the project. In 2021, the project was rebranded as Kserve, and Kserve 0.7 was released outside the Kubeflow project. 
+
+KServe is a standard Model Inference Platform on Kubernetes, built for highly scalable use cases. Teams can serialize their trained models and store them on a model registry, update a manifest, and serve those models without needing to build custom servers and manage Kubernetes resources. 
+
+A Kserve InferencingService is to a model like a pod is to a container. The pod wraps the container and provides all the resources the container requires. If you need another pod, the system can pull and deploy an identical container replica. Similarly, Kserve pulls a model and then serves it, ensuring it has everything it needs to be a scalable and reachable service.  
+
+Kserve can use the power of the Kubernetes scheduler to ensure the InferencingService can access the appropriate resources. The Kubeflow Training Operator can train the models Kserve will eventually deploy. Kserve also supports Python backends, making it a robust integration. Due to Kserve's previous relationship with Kubeflow, Kserve is often installed directly as part of Kubeflow. The integration is much tighter than Volcano (for now). Generic serving support can be expected from the Kubeflow community, but feature requests and issues must be submitted directly to the Kserve community. Similar to Volcano, we encourage users to interact with the Kserve community.
+
+
+Below is a Kserve architecture image. Notice that the Kserve service sits on top of Kubernetes and below the machine learning frameworks. Above the frameworks, we see pre_process, predict, post_process, explain, and monitor. ML teams had to manage these aspects of model serving in the days of Flask and even as we adopted serving frameworks. Kserve provides a simplified interface for these tasks. 
+
+
+
+KServe Architecture
+Source: Kubeflow Documentation 
+
+
+
+
+
+A Word on Serializing
+To store a model, we need to serialize it. Due to its simplicity, we have seen teams use the pickle library more often than not. Many machine learning frameworks offer serialization formats (e.g., TensorFlow's SavedModel and PyTorch's model saving and loading mechanisms) optimized for those frameworks' specific models and operations. 
+
+
+Pickling a model has several issues:
+Security Risks: Loading pickled data from untrusted sources can be dangerous. The pickle module can execute arbitrary code during deserialization, making it vulnerable to code injection attacks. If an attacker can manipulate the data being deserialized, they can execute malicious code on your system.
+Compatibility Issues: Pickle is tightly coupled with Python's version and the internal structure of objects. The Python version dependency means a model pickled in one version of Python or a specific library version might not be unpickled (loaded) successfully in another version. The dependency requirement can pose significant problems for model deployment and sharing.
+Efficiency and Performance: Pickle can be inefficient regarding serialization time and the serialized data size for large data sets or complex models. There are often more efficient formats for storing large arrays or high-dimensional data (e.g., HDF5).
+Limited Language Support: Pickle is specific to Python, making it difficult or impossible to load the serialized data in other programming languages. The Python requirement limits the interoperability and flexibility of your data and models, especially in environments that use multiple programming languages.
+
+
+If you visit Pickle -  Python object serialization, you will notice the WARNING box located near the top of the page. It specifically calls out how insecure the library is. Teams are better off using specialized serialization tools such as ONNX. 
+
+Demonstration Video: A Complete Kubeflow Example Using Volcano and Kserve
+In this video, we will serve our Iris detection model using Kserve. Before we serve the model, we will provision a volume to store the model and launch our XGBoostJob via a specialized Python container component within a Kubeflow Pipeline. We then save the model to a local volume using XGboost’s save_model() . Finally, we will reference the model that we stored on a local volume in our Kserve manifest and deploy it to our cluster as an InferenceService. We will send a prediction request to the model endpoint within our Kubeflow notebook to validate that this all worked expectedly. 
+
+The code for this example is available in the LFS147x Course Repository: LF-Training/LFS147-code
+
+<Kserve Video>
+
+
+
+
+
+
+Conclusion
+
+Kubeflow is designed to be composable. The Kserve and Volcano projects are popular integrations that prove Kubeflow's compatibility. Together, these solutions can improve our model development outcomes by automating previously painful processes. 
+
+Volcano is a specialized scheduler that uses gang scheduling and specialized scheduling algorithms to improve cluster resource utilization and address gridlock risk. 
+
+Kserve is a serverless inference project that helps improve our ability to deploy models regardless of their underlying frameworks. We can use serialization techniques to store our models and pull them like containers. 
+
+Many machine learning frameworks use their methods to serialize models. The Pickle Python library is a simple solution for serialization but is risky due to compatibility and security issues. Teams are better off using specialized tools.
+
+Support for these projects and libraries varies based on their history with the Kubeflow community, i.e., Volcano is a separate component and scheduler that requires configuration work. In contrast, Kserve has a history with Kubeflow and can be used without much installation or configuration. 
+
+Ultimately, these integrations can greatly enhance Kubeflow through automated decision-making and reduced development requirements for model serving. 
+
+
+
+
+
+

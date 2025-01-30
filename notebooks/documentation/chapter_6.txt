@@ -1,0 +1,238 @@
+Chapter 6.  The Kubeflow Dashboard and Notebooks
+
+Chapter Introduction
+Chapter Overview
+Once we have a working Kubeflow cluster, we are ready to start our model development. To access the Kubeflow services, we will log in to the Kubeflow Central Dashboard. From the Kubeflow Dashboard, we can explore the various Kubeflow offerings and create Kubeflow notebooks. In this chapter, we will navigate the Kubeflow Dashboard, discuss deploying a Kubeflow notebook, and run a simple workload in a Kubeflow Notebook while managing general limitations. 
+
+Learning Objectives
+By the end of this chapter, you should be able to:
+Navigate the Kubeflow Dashboard 
+Create a Kubeflow notebook
+Explain the importance of scheduling and how Kubernetes handles these requests
+Run a simple workload in a Kubeflow Notebook
+Discuss the limitations of Kubeflow Notebooks
+
+
+The Kubeflow Central Dashboard
+Kubeflow’s Initial User Experience 
+New Kubeflow users are often introduced to Kubeflow via the Kubeflow Central Dashboard. The Kubeflow Central Dashboard runs in the Kubeflow namespace alongside many of Kubeflow’s core services. The Kubeflow Central Dashboard centralizes core service access and enables users to leverage these services from their local browsers. However, users who log into the Kubeflow dashboard only see the services they are allowed access to and the resources deployed in their specific namespace. Two users without access to each other's namespaces cannot see each other's deployed resources. The namespace feature may seem like a barrier to collaboration, but it is not. An administrator can grant users access to each other's namespaces or create team namespaces for shared resource access.
+
+
+Home Page 
+The home (or landing) page is what users see when they first log into the Kubeflow Central Dashboard. Below is a Kubeflow Central Dashboard for the Google Cloud Kubeflow Distribution. The URL at the top of the page is the publicly exposed endpoint. The main body of the dashboard has specific details on the namespace, such as recently run pipelines. The body also contains particular Google Cloud Platform service details and additional documentation. The right side of the central dashboard has links to component pages, allowing for interaction with Kubeflow's specialized services.
+
+
+
+The Kubeflow Central Dashboard Homepage
+ALT= “Image of the front page of the Kubeflow UI. The image shows the Kubeflow Central Dashboard.”
+
+
+Notebooks
+The notebook page is where users can create and connect to notebooks. 
+Below is an image of the Kubeflow Notebooks page with two provisioned notebooks in this namespace. On the right of the provisioned notebooks, we can see the requested resources for the notebook and the option to connect, stop, start, and delete a notebook. The upper right corner of the Kubeflow Notebooks page allows us to create a new notebook using the + New Notebook button.
+
+
+The Kubeflow Notebooks Page
+ALT="Image of the Kubeflow Notebooks Page. The UI shows the different notebooks one has created within Kubeflow.”
+
+
+TensorBoards
+TensorBoards is a tool that provides the measurements and visualizations needed during the machine learning workflow. The TensorBoards page allows a data professional to connect to Tensorboard services running in their namespace. The Tensorboards are configured via event files written on a persistent volume or object store.
+Below is a picture of the TensorBoards page. We currently have a single TensorBoard within this namespace. Notice the Logspath pvc://tiledb-workspace/ path present on the image. Our TensorBoard event files are located at this path. 
+
+
+
+The TensorBoards Page
+ALT="An image of the TensorBoards webpage within the Kubeflow UI.” 
+
+
+
+Volumes 
+The volumes page allows users to request volume provisioning. Kubernetes PersistentVolumes are global resources, meaning they are not bound to a single namespace. PersistentVolumeClaims are namespaced, thus restricting what volumes a user can interact with. PersistentVolumeClaims map a resource to a PersistentVolume, enabling users to manage PersistentVolumes indirectly from their namespaces. The PersistentVolume to PersistentVolumeClaim relationship prevents us from allowing our end users to delete PersistentVolumes across namespaces they cannot access.  
+
+
+An administrator may configure StorageClasses to allow the selection of different storage tiers. Users may also configure distinct access modes based on these StorageClasses for their volumes. Below is an image of a user creating a volume. The user named the volume my-new-volume and requested the volume be 10 gigabytes in size.  The requested storage class was the standard-rwo storage class. The access mode is ReadWriteOnce, meaning a single node can mount the volume as read-write. Pods scheduled on the node may access the volume, but other pods on other nodes may not.
+
+
+
+The Volumes Page
+ALT="A screenshot of the volumes page. In the screenshot, a new volume pop-up box is highlighted.” 
+
+
+
+Endpoints 
+The endpoints page allows a data professional to explore InferenceServices details. 
+
+Below is an image of the Endpoint Details page, where users can view important details about their deployed endpoints.
+Take note of the following details:
+Service Status: Signals whether or not the underlying resources are ready to receive requests. 
+External URL:   The URL used to access the endpoint externally (requires external DNS).
+Internal URL: The URL is internal to the Kubeflow cluster (Kubernetes DNS).
+Component:  Communicates the service's elements (i.e., predictor or transformer).
+Predictor Type: Custom predictor or a supported framework. 
+InferenceService Conditions: Communicates whether all the required pieces, such as ingress and routes, are ready so the service can receive requests. 
+Logs: The pod logs and events.
+Details: Name of the endpoint and the various configured specifications. 
+YAML:  The underlying Kubernetes manifest deployed on the cluster.
+
+
+
+Kubeflow Endpoints Details Page
+
+ALT="Image of the Kubeflow UI, set to the endpoint tab. The webpage has settings and details to configure endpoints.” 
+Experiments (AutoML)
+The Experiments (AutoML) page allows users to submit namespaced and templated Katib Experiments without needing delivery tools or templating engines. Katib is a solution for hyperparameter search and other AutoML functionality, which we will explore further in later chapters. 
+
+The Experiments(AutoML) page allows users to configure a Katib experiment via the GUI or use the GUI to begin templating a YAML manifest that can be submitted from the Experiments (AutoML) page instead of via a kubectl command. 
+
+Templating YAML manifests is an often-discussed issue in the Kubernetes community. Tools like Helm, KPT, and Jsonnet seek to improve the user experience and operationalize manifest templating. A Kubernetes manifest can then be pushed to a Git repository for version control and deployed via a continuous delivery tool such as Flux or ArgoCD.  
+
+Below is an image of a user editing a Katib experiment YAML manifests from the Experiments(AutoML) page. Notice that the entries Parallel Trials, Max Trials, and Max failed Trials in the GUI are reflected in the YAML under maxTrialCount, parallelTrialCount, and maxFailedTrialCount in the YAML.
+
+
+Editing a Katib Experiment YAML Manifest
+
+
+ALT="An image of editing the YAML within a Katib Experiment.” 
+Pipelines
+Kubeflow Pipelines, or pipelines for short, are the workflow orchestrator of the Kubeflow ecosystem.
+
+The Pipelines page allows users to manually submit pipelines to the cluster and shows the previously submitted runs.
+
+Although the pipelines page supports manual pipeline submissions, users do not need to submit a pipeline manually. A user may use the KFP SDK or the KFP SDK CLI. 
+
+Unlike the Experiments(AutoML) page, where we submitted a Kubernetes manifest that defines a Katib experiment, KFP pipelines are submitted directly to the Kubeflow Pipeline service running in the Kubeflow namespace. The pipeline service will then submit all the necessary resources to the Kubernetes cluster and create a Direct Acyclic Graph (DAG).
+
+Submitted pipelines can be public (anyone in the organization can see and use a pipeline) or private (only users granted access to a specific namespace can see and use a pipeline).  
+The image below is the pipeline upload page where users can manually upload a compiled pipeline to their Kubeflow cluster. 
+
+
+The Kubeflow Pipeline Upload Page
+ALT="An image of the Kubeflow pipelines upload page. The page has several options for settings for Kubeflow Pipelines uploads.” 
+
+
+
+Runs
+A Run is a specifically configured and executed pipeline you can track with a DAG. When creating a run, a user will select a pipeline and can choose an experiment with which their newly created run will be associated.
+
+Below is an image of a Run DAG for a simple pipeline to demonstrate data passing. The preprocess step creates two dataset artifacts that are both passed to the train step, which produces a model artifact.
+
+
+
+A Data Passing DAG
+ALT=" An image of the Kubeflow UI showing a visualization of how a data experiment’s components fit together.”
+
+
+Experiments (KFP)
+The KFP experiments page allows users to develop pipeline runs that can be compared and 
+organized as part of an experiment. 
+
+Users can create recurring pipeline runs for workloads that process data at specific intervals. 
+
+From the runs, you can compare your outputs using the various datasets by exploring visualizations and other pipeline metrics. 
+
+Below is an image of two experiments from the Experiments(KFP) page. The first experiment (new_experiment) is a data passing in Python components tutorial. This experiment was only run once. The second experiment (hello_kubeflow) is a tutorial designed to demonstrate control structures. This experiment is a recurring run; therefore, it was run multiple times. Based on the time stamps, this experiment runs once an hour.
+
+
+
+Kubeflow Pipeline Experiments Page
+ALT="An image of the Kubeflow pipelines Experiments page. In this image, all the created experiments are listed with data and options to view.
+
+
+Recurring Runs
+The recurring runs page will show any runs you have configured to execute on a specific schedule. The image below is an enabled periodic run configured to execute every hour. 
+
+
+
+Recurring Run Page
+ALT="An image of the Recurring Run Page within the Kubeflow UI. The page contains options to view and edit recurring runs and a button to create new ones.” 
+
+
+
+Artifacts 
+Artifacts include anything that your pipelines produce and need to store. Common artifacts are marshaled data or a trained model. We can see the details and storage location of any artifacts our runs make from the artifacts page. Artifacts are often stored either in an object store or a local volume. Below is an image of the Artifacts page. Notice the different types of artifacts (system.Dataset, and system.Model) and the URI where the artifact is stored. This picture is from the Google Cloud Platform distribution, and therefore, the URIs are Google Cloud Storage locations.
+
+
+Artifacts Page
+ALT="An image of the artifacts page containing a listing of data artifacts.” 
+
+
+Executions 
+A pipeline is a series of executions. An execution usually has an input and output artifact. The input artifact is the output artifact of the previous step.  The executions page lets us view execution statuses and their artifacts. Below is an image of the training execution aptly named train. Notice the type is system.ContainerExecution. Each execution is a specific job executed by a container. At the bottom of the image, we can see the input and output artifacts. This execution takes in two dataset artifacts and outputs a model artifact.
+
+
+Executions Page
+ALT="An image of the executions page within the Kubeflow UI. The page contains information on various executions running on a user's clusters.
+
+
+
+Kubeflow Notebooks
+Introduction
+Kubeflow notebooks are curated integrated development environments that machine learning teams can leverage to interact with Kubeflow’s APIs. This section will detail how teams work with Kubeflow notebooks, provide some details on notebook implementation, and discuss the limitations of notebooks.
+Lab-as-a-Service
+
+We like to use the term Labs-as-a-Service (LaaS) to help users understand the concept behind Kubeflow Notebooks. As-a-service is used in the technology industry for managed solutions provided on demand to customers. The cloud offers many software-as-a-service (SaaS) tools you can leverage without worrying about the software's underlying cost and complexity.
+
+Kubeflow Notebooks are managed and on-demand virtual development environments for data scientists; therefore, they can be described as Labs-as-a-Service. Let's pretend we have this functionality in the physical world to understand better what we mean by Labs-as-a-Service.
+
+Imagine you are a more traditional scientist, a chemist, for simplicity's sake. You arrive at your lab every day and begin work. You realize you need specific chemicals or elements, so you request them from a chemical or element provider. Eventually, a shipment arrives, and you can continue your work. Beyond your raw materials, you may also need specialized tools to track your experiments, measure your chemicals, and ultimately share your work with the greater scientific community. If you don’t have these tools, you need to request them and wait just like you had to for your chemicals. That is a lot of waiting around when you want to make discoveries. Not only that, but these discoveries need to be reproducible and replicable. Without access to your exact lab environment, your work would be arduous to share and scale across the greater scientific community. 
+
+What if you could arrive at work and enter the configuration of supplies and laboratory equipment needed for today from a menu of pre approved resources, and the lab just appeared? Your new lab will be ready to go with everything you need for your experiments. You can grant users access to your lab and share a copy of your lab with them to create in their local Labs-as-a-Service building. You can even turn off your lab and free up resources for others, knowing that your lab will still be just as you left it tomorrow.  How would this benefit you?
+
+First, you could spend the time you previously spent requesting resources and tools experimenting. You could also share your work by providing access to your lab environment or sending a copy of your lab to another chemist. Lastly, you would ensure efficient use of your lab team's resources by only using what you need and freeing up resources when you are done.
+
+Essentially, a Lab-as-a-Service would be incredibly beneficial to you as a chemist because you could request and receive a curated lab environment, share your work, and free up unused resources with little to no delay between activities, but how does this Lab-as-a-Service scenario apply to Kubeflow Notebooks and data scientists?
+Notebooks-as-a-Service for Data Science
+Kubeflow Notebooks are specialized servers and integrated development environments that can be customized and maintained by a platform team on behalf of data professionals. Just like you could request a physical lab and raw materials from the Lab-as-a-Service menu in our chemistry example, a data scientist can ask for resources for their Kubeflow Notebook in a self-service manner from the Kubeflow Central Dashboard. Kubeflow users can additionally select unique configurations an administrator provides within a user's namespace to configure notebooks to do things like access services in other namespaces.  
+
+Just like your physical chemistry lab was placed within a building and removed once you were done, Kubeflow Notebook pods are placed on a node with enough resources to satisfy the notebook’s requirements. If a user chooses to stop their notebook, the pod is scaled down and will no longer be running on their cluster. Because the pod's data is on an attached volume, the saved work will be there when they start their notebook again. Furthermore, an administrator can set policies to automatically scale down idle notebooks to save on costs and free up resources without worrying about data loss.
+
+Your chemistry lab was also to be shared collaboratively. Kubeflow Notebooks have the same capabilities. Kubeflow Notebooks are built by extending containers, thus improving reproducibility by allowing us to pin our dependencies through a build process. We can then share our environment with others by granting them access to our namespace or by sending them the notebook code and the container we used to deploy the notebook resource.
+
+
+The Lab-as-a-Service workflow helps data science teams reliably request resources, share their work, and free up unused resources without lengthy lead times. It also helped our chemist receive raw materials, create a lab, and release the lab resources when done. Our workflow may seem perfect, but a few things could be improved.
+
+Continuing with our chemist example, we may need a lab to do our work, but so do other scientists in the building. If other scientists have already received their requested lab environments, we may need more space in our building for our lab. The same issue may occur for other scientists worldwide who want to use our environment but don’t have room in their buildings. We need a lab scheduler to choose the best spot for our lab and a lab autoscaler to add more buildings to our complex if we can’t find a place for our lab in our current complex. The same applies to Kubeflow Notebooks. We need space on our nodes and the ability to provision new nodes if our cluster is saturated. Luckily, in the case of Kubeflow, we have the Kubernetes Scheduler and Autoscaler to help solve our problems.
+The Kubernetes Scheduler 
+The Kubernetes Scheduler's primary role is to assign newly created pods to nodes. It makes this decision based on various criteria, such as resource requirements, affinity and anti-affinity specifications, and data locality.  The Kubernetes Scheduler can also work with The Kubernetes Autoscaler to create new nodes if a pod cannot be scheduled. 
+
+The Kubernetes Scheduler and Autoscaler can work to ensure our pods always have the resources they need, but we still have control over our resource allocation. Administrators can limit resource allocation globally by preventing clusters from scaling. Administrators can also determine resource allocation by providing logical barriers at the namespace level. Restricting resources at the namespace level will ensure the cluster can scale and provide resources for other users but will prevent a resource from being scheduled should the scheduled resource request go above a namespace’s quota. 
+
+Putting this all together in the context of a chemistry lab scheduler, a scientist requests a lab, and our lab scheduler searches all available buildings in the lab complex to find a place for the requested lab. If a building has room, the lab is created. If the buildings are all full, a new building is added to the complex. A chemistry lab administrator could restrict the creation of new buildings or limit the complex-wide resources a scientist can request.  
+
+As for Kubeflow Notebooks, we can schedule notebook pods based on decision criteria and scale up our clusters to accommodate new notebooks. An administrator can limit node provisioning and restrict namespace resource allocation.
+
+Scheduling and autoscaling may make Kubeflow Notebooks seem like a complete solution because we can request and add resources to solve our workload constraints. However, Kubeflow Notebooks have clear limitations, especially regarding reliability, scalability, and performance. 
+Limitations of Notebooks 
+When performing tasks often executed on notebooks, such as training models, cleaning datasets, and serving inference services, it is prudent to consider their reliability, scalability, and performance to determine when our notebooks are no longer the optimal environment for our tasks. Let’s further inspect these concepts and discuss how a single Kubeflow Notebook can negatively impact our reliability, scalability, and performance goals. 
+
+Reliability is how resilient a system is to failures to prevent the loss of work and ensure the availability of our systems. The comment “How many 9s do you want?” stems from the act of balancing reliability and budget. Each “9” is nine after 99.99… Creating massive backup tasks, replicating globally, and running multiple replicas can help our services be more reliable (adding nines), but these are costly requirements. The SRE handbook claims teams benefit from balanced reliability and overall customer satisfaction. SREs often create error budgets that use technical signals mapped to specific outcomes that reduce customer satisfaction to determine what components require additional reliability.  You can learn more about these ideas in the SRE Handbook’s third chapter, Embracing Risk. 
+
+Scalability is the capability of a system to handle a growing amount of work or its potential to accommodate growth. "Can we afford to grow? (or NOT to grow),” underscores the balancing act between scalability and cost.  Implementing horizontal scaling by adding more machines or vertical scaling by adding more powerful resources, alongside optimizing databases and application architecture, can significantly improve a system's ability to scale. However, these strategies involve higher costs and complexities. According to scalability strategies discussed in resources such as The Art of Scalability, finding the right balance between scalability and efficiency is essential for maintaining a system that can adapt to increasing demands without exceeding budgetary limits. Architects and engineers often consider scalability during the design phase, planning for future growth to ensure that the system remains responsive and reliable as usage patterns evolve, aligning with business objectives and user needs.
+Performance measures how efficiently a system can handle tasks and operations, affecting speed and responsiveness. "Can we afford to go fast?" highlights the trade-off between achieving optimal performance and managing costs. Optimizing code, scaling, employing faster storage solutions, and leveraging efficient algorithms can significantly enhance a system's performance. However, these improvements often involve increased expenses, complexity, and technical debt. Performance-focused engineers may use metrics like response time, throughput, and resource utilization to establish performance budgets. 
+Scenario: Reliability, Scalability, and Performance Limitations of Notebooks
+Let’s apply the concepts of reliability, scalability, and performance to a potential real-world example. Imagine you are a machine learning platform engineer charged with supporting your organization's fancy new machine learning platform. You support a team of 5 data scientists who train various models to support business needs. The system you support is static, and the team isn’t comfortable with tools beyond notebooks. Let’s explore some scenarios that could lead to upset data scientists and delayed projects. 
+Notebooks and Limited Reliability 
+Imagine your data scientist had a long-running job they needed to launch to train one of their models. They boot up their notebook, request the highest CPU and memory resources available based on their provided nodes, and kick off the job. Let’s say that the job takes 8 hours to complete. The data scientist returns to work in the morning to view the results. The data scientist expected a completed model training but instead witnessed an idle notebook with no model in sight. How did this happen?
+
+Unbeknownst to you, the infrastructure team performed a machine image update and needed to reboot that node. The infrastructure team performed the scheduled maintenance node by node, expecting the jobs to be rescheduled. The notebook was idle because its running job was interrupted when the pod was rescheduled to a different node so the node’s maintenance could be performed. Since the job was in a notebook, it was never relaunched after the maintenance.  
+
+Now, the data scientist must restart the training job. This frustrating outage was a teachable moment for the data science and infrastructure teams, but the limitations of a notebook’s reliability for long-running jobs were witnessed firsthand. 
+Notebooks and Performance 
+Our long-running job scenario could be seen as a reliability issue because the data scientist's job was bound to a single notebook, and even when the notebook came back, the job's past work was lost, and the job wasn’t relaunched. The failure was due to the notebook's limited reliability, but what if we looked at this issue from a performance perspective? The initial issue could be that the data scientist had to wait eight hours for results. Forget the machine failure. A simple runtime error could ruin any job progress. Minor errors failing slowly are a huge efficiency risk. The data scientist must improve their job’s performance to tighten feedback loops and reduce the risks of rescheduling. Because the data scientist used the maximum node size available, they must either tune the job to be more efficient with fewer resources or request even larger nodes to improve its performance. Both options are time-consuming, frustrating, and expensive. 
+Notebooks and Scaling
+We previously discussed that notebooks are a data science lab-as-a-service tool and mentioned how notebooks are scheduled. Consider what you now know about scheduling for the next aspect of our scenario. 
+
+In our scenario, our data scientist needed an entire node. Their notebook pod will prevent other pods from being scheduled due to the unavailability of any allocatable memory. The other data scientists on the team now have one less node they can use, and if the cluster can’t scale to accommodate new notebooks, our data scientists may be stuck waiting for new nodes to be provisioned or notebooks to be scaled down. Limited resource room might not immediately impact the team. Still, as their workload matures, they may need to work with increasingly large datasets requiring more resources to be loaded into memory. These resource-intensive jobs will be challenging to fit into our cluster. Our scheduler must schedule huge pods that are a higher percentage of each node and may not find an applicable node. The team could request larger or more nodes, but If the notebooks on these nodes are scaled down or rescheduled, we could be stuck with idle nodes. Idle resources are not only economically taxing to teams but levy an environmental tax as well. We may even run into a situation where our data centers or cloud providers do not have a singular node that can fit our workload.
+
+To put it simply, as our projects scale and our teams grow, we will reach a point where running jobs in a single notebook bound to a single node isn’t a successful pattern. We will need to scale our resources, ensure our jobs can run uninterrupted by the chaos of reality, and tighten our feedback loops by ensuring jobs are completed promptly. Notebooks are fantastic for experimentation, but tools like Ray and Spark exist and have gained wide adoption because distributed computing is important. We will discuss distributed computing in later chapters. For now, we just wanted to be transparent about the limitations of Kubeflow Notebooks. 
+Demonstration Video: Kubeflow Notebook
+Video Introduction
+Now that we understand Kubeflow Notebooks, let’s train our first model. In this video, we will use a Kubeflow Notebook to train an XGBoost model that can classify Irises. We will create a new Kubeflow Notebook, demonstrate notebook scheduling, and explain how features impact predictions and why accuracy isn’t always the best model performance metric. By the end of the video, you should better understand how to use Kubeflow Notebooks in your projects.
+
+Demonstration Video: Kubeflow Notebook
+
+LINK To Demo Video     
+Conclusion 
+
+The Kubeflow Central Dashboard is a great place to start when logging into a Kubeflow cluster. The dashboard’s pages represent the services deployed across the Kubeflow cluster.  One highly leveraged service is the Kubeflow Notebook service, which acts as a lab-as-a-service (LaaS) mechanism to ensure data science teams have on-demand and reproducible environments to replicate model development efforts, but they have their limitations.  Notebooks are great for consolidated model development and experimentation but will hit a point where their work must be distributed across many machines for improved performance, scalability, and resiliency.
