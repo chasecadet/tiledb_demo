@@ -17,11 +17,11 @@ spec:
     spec:
       containers:
       - name: demo-app
-        image: chasechristensen/tiledb_demo_frontend:1.11
+        image: chasechristensen/tiledb_demo_frontend:1.12
         ports:
           - name: http
             containerPort: 8080
-            protocol: TCP  
+            protocol: TCP
 ---
 apiVersion: v1
 kind: Service
@@ -35,7 +35,7 @@ spec:
   - protocol: TCP
     port: 80
     targetPort: 8080
-    name: http  
+    name: http
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -58,7 +58,7 @@ spec:
             host: demo.christensenc3526.svc.cluster.local
             port:
               number: 80
-       
+
 ---
 
 apiVersion: security.istio.io/v1beta1
@@ -79,4 +79,3 @@ spec:
   selector:
     matchLabels:
       app: demo
-

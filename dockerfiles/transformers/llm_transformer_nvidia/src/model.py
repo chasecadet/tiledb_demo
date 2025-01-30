@@ -6,7 +6,6 @@ import httpx
 from kserve import Model, ModelServer, model_server
 
 logger = logging.getLogger(__name__)
-LLM_PREDICTOR_URL = "http://{0}/v1/chat/completions"
 
 class Transformer(Model):
     def __init__(self, name: str, predictor_host: str, protocol: str,
@@ -38,7 +37,7 @@ class Transformer(Model):
         url = f"http://{svc}/v1/models/{model_name}:predict"
         return url
 
-    def preprocess(self, request: dict, headers: dict) -> dict:
+     def preprocess(self, request: dict, headers: dict) -> dict:
         data = request["instances"][0]
         query = data["input"]
         num_docs = data.get("num_docs", 4)
@@ -63,7 +62,10 @@ class Transformer(Model):
 
         logger.info(f"Retrieved Context:\n{context}")
 
-        # Call the LLM predictor
+        # Construct the correct LLM predictor URL
+        predictor_url = f"http://{self.predictor_host}/v1/chat/completions"
+        logger.info(f"Sending request to LLM predictor at {predictor_url}")
+
         llm_payload = {
             "model": "meta/llama-2-7b-chat",
             "messages": [
@@ -76,17 +78,16 @@ class Transformer(Model):
             "stream": False
         }
 
-        logger.info(f"Sending request to LLM predictor at {LLM_PREDICTOR_URL}")
-        llm_response = requests.post(LLM_PREDICTOR_URL, json=llm_payload, verify=False)
+    llm_response = requests.post(predictor_url, json=llm_payload, verify=False)
 
-        if llm_response.status_code == 200:
-            result = llm_response.json()["choices"][0]["message"]["content"]
-            logger.info(f"LLM Response: {result}")
-            return {"predictions": [result]}
-        else:
-            error_message = f"Error calling LLM predictor: {llm_response.status_code} - {llm_response.text}"
-            logger.error(error_message)
-            return {"predictions": [error_message]}
+    if llm_response.status_code == 200:
+        result = llm_response.json()["choices"][0]["message"]["content"]
+        logger.info(f"LLM Response: {result}")
+        return {"predictions": [result]}
+    else:
+        error_message = f"Error calling LLM predictor: {llm_response.status_code} - {llm_response.text}"
+        logger.error(error_message)
+        return {"predictions": [error_message]}
 
 
 if __name__ == "__main__":
