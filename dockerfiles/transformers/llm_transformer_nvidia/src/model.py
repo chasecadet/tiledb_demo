@@ -62,25 +62,27 @@ class Transformer(Model):
         Call LLM with retrieved context and return the response.
         """
         data = request["instances"][0]
-        query = data["query"]
-        context = data["context"]
+        query = data.get("query")
+        context = data.get("context", "")
 
         # ✅ Ensure correct predictor URL
         predictor_url = f"http://{self.predictor_host}/v1/chat/completions"
         logger.info(f"Sending request to LLM predictor at {predictor_url}")
 
+        # 🔥 Allow dynamic values for LLM parameters
         llm_payload = {
-            "model": "meta/llama-2-7b-chat",
+            "model": data.get("model", "meta/llama-2-7b-chat"),  # 🔹 Default to llama-2-7b-chat but allow override
             "messages": [
-                {"role": "system", "content": "You are an AI assistant."},
+                {"role": "system", "content": data.get("system", "You are an AI assistant.")},  # 🔹 Allow custom system messages
                 {"role": "user", "content": f"Context: {context}\n\nQuestion: {query}"}
             ],
-            "temperature": 0.5,
-            "top_p": 1,
-            "max_tokens": 256,
-            "stream": False
+            "temperature": data.get("temperature", 0.5),  # 🔹 Use request value or default
+            "top_p": data.get("top_p", 1),
+            "max_tokens": int(data.get("max_tokens", 256)),
+            "stream": data.get("stream", False)
         }
 
+        # 🔹 Send request to LLM
         llm_response = requests.post(predictor_url, json=llm_payload, verify=False)
 
         if llm_response.status_code == 200:
