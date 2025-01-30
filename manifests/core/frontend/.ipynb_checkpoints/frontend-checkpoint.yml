@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: demo-app
-        image: chasechristensen/tiledb_demo_frontend:1.10
+        image: chasechristensen/tiledb_demo_frontend:1.11
         ports:
           - name: http
             containerPort: 8080
@@ -50,9 +50,9 @@ spec:
   http:
     - match:
         - uri:
-            prefix: /professorflow
+            prefix: /professorflow/
       rewrite:
-        uri: /professorflow
+        uri: /professorflow/
       route:
         - destination:
             host: demo.christensenc3526.svc.cluster.local
