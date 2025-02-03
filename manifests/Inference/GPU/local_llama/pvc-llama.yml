@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: llama-pvc
+  namespace: christensenc3526
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi  # Adjust size based on the model (~13GB for fp16)
+  storageClassName: standard  # Modify if needed
