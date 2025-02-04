@@ -6,7 +6,7 @@ spec:
   predictor:
     containers:
     - name: kserve-container
-      image: "chasechristensen/tiledb-vector-isvc:v2"
+      image: "chasechristensen/tiledb-vector-isvc:v2" #change this to your image if you are using an image you built and hosted.
       imagePullPolicy: Always
       resources:
         requests:
@@ -16,15 +16,8 @@ spec:
           memory: "2Gi"
           cpu: "500m"
       args:
-      - newtiledb
+      - sanfranai #change this to your bucket if you are using a different bucket.
       env:
-      # If you are running behind a proxy, uncomment the following lines and replace the values with your proxy URLs.
-      # - name: HTTP_PROXY
-      #   value: <your http proxy URL>
-      # - name: HTTPS_PROXY
-      #   value: <your https proxy URL>
-      # - name: NO_PROXY
-      #   value: .local
       - name: ACCESS_KEY
         valueFrom:
           secretKeyRef:

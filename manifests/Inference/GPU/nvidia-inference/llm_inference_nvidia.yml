@@ -21,7 +21,7 @@ spec:
   transformer:
     timeout: 600
     containers:
-      - image: chasechristensen/transformer-nvidia-nim:1.2
+      - image: chasechristensen/transformer-nvidia-nim:1.2 #update if using your own registry.
         imagePullPolicy: Always
         resources:
           requests:

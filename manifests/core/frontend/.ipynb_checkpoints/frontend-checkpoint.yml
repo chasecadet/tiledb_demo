@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: demo-deployment
-  namespace: christensenc3526
+  namespace: christensenc3526 #update with your namespace 
   labels:
     app: demo
 spec:
@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
       - name: demo-app
-        image: chasechristensen/tiledb_demo_frontend:1.12
-        ports:
+        image: chasechristensen/tiledb_demo_frontend:1.12 #update if using a different image and serving the service at a different path.
+        ports: 
           - name: http
             containerPort: 8080
             protocol: TCP
@@ -27,7 +27,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: demo
-  namespace: christensenc3526
+  namespace: christensenc3526 #update with your namespace
 spec:
   selector:
     app: demo
@@ -40,7 +40,7 @@ spec:
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: tiledb-virtual-service
+  name: frontend-virtual-service
   namespace: christensenc3526  # Match this with your service's namespace
 spec:
   gateways:
@@ -50,12 +50,12 @@ spec:
   http:
     - match:
         - uri:
-            prefix: /professorflow/
+            prefix: /professorflow #update with your desired serving path. 
       rewrite:
-        uri: /professorflow/
+        uri: /professorflow #update with your desired serving path
       route:
         - destination:
-            host: demo.christensenc3526.svc.cluster.local
+            host: demo.christensenc3526.svc.cluster.local #update with your namespace 
             port:
               number: 80
 

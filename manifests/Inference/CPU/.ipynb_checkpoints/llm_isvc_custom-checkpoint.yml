@@ -7,7 +7,7 @@ spec:
     timeout: 600
     containers:
       - name: kserve-container
-        image: chasechristensen/tiledb_predictor:v1
+        image: chasechristensen/tiledb_predictor:v1 #update with your image if self-hosting. 
         imagePullPolicy: Always
         # If you are running behind a proxy, uncomment the following lines and replace the values with your proxy URLs.
         # env:
@@ -27,7 +27,7 @@ spec:
   transformer:
     timeout: 600
     containers:
-      - image: chasechristensen/tiledb_transformer:v6
+      - image: chasechristensen/tiledb_transformer:v6 #update with your image if self-hosting. 
         imagePullPolicy: Always
         resources:
           requests:

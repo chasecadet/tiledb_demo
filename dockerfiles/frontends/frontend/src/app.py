@@ -6,7 +6,7 @@ from theme import TileDBTheme
 import os
 import uvicorn 
 app = FastAPI()
-CUSTOM_PATH = os.environ.get("CUSTOM_PATH", "/professorflow")
+CUSTOM_PATH = os.environ.get("CUSTOM_PATH", "/professorflow") #change this to your path for the URL.
 DOMAIN_NAME = "svc.cluster.local"
 NAMESPACE = open("/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r").read()
 DEPLOYMENT_NAME = "llm"
@@ -134,7 +134,7 @@ def create_gradio_app():
     return demo
 @app.get("/")
 def read_main():
-    return {"message": "This is the main app. Access the Gradio interface at /professorflow"}
+    return {"message": "This is the main app. Access the Gradio interface at /professorflow"} #change this to your path for the URL.
 
 
 
